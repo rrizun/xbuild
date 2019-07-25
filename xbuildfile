@@ -1,0 +1,4 @@
+#!/bin/sh -ex
+pwd
+date
+echo hello
