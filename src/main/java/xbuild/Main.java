@@ -63,7 +63,7 @@ public class Main implements ApplicationRunner {
 
 			
 		}
-
+		
 		int buildNumber = 0;
 		if (allTags.size()>0)
 			buildNumber = Iterables.getLast(allTags.keySet());
@@ -80,66 +80,48 @@ public class Main implements ApplicationRunner {
 		env.put("XBUILD_NUMBER", ""+buildNumberNext);
 		env.put("XBUILD_TIMESTAMP", timestamp);
 
-		Path tmp = Files.createTempDirectory("xbuild");
-
-		log(tmp);
-
 		Path tempFile = Files.createTempFile("xbuild", ".zip");
 		log(tempFile);
 		
-		final OutputStream out = Files.newOutputStream(tempFile);
-		
 		ArchiveFormats.registerAll();
 		
-//    ArchiveCommand.registerFormat("zip", null);
-    
     try (Git git = new Git(repository)) {
-      
-      git.archive()
-      .setFormat("zip")
-      .setOutputStream(out)
-      .setTree(repository.resolve("master"))
-      .call();
-
-//  try {
-//         git.archive()
-//                 .setTree(db.resolve("HEAD"))
-//                 .setOutputStream(out)
-//                 .call();
-//  } finally {
-//         ArchiveCommand.unregisterFormat("tar");
-//  }
- 
+      try (OutputStream out = Files.newOutputStream(tempFile)) {
+        git.archive()
+        .setFormat("zip")
+        .setOutputStream(out)
+        .setTree(repository.resolve("master"))
+        .call();
+      }
     }
     
+    Path tmpDir = Files.createTempDirectory("xbuild");
+    
+    unzip(tempFile, tmpDir);
+
 		run(env, "./xbuildfile");
-
-		
-
 	}
 
-//	private void archive() throws Exception {
-//		java.util.zip.ZipFile zipFile = new ZipFile(file);
-//		try {
-//			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-//			while (entries.hasMoreElements()) {
-//				ZipEntry entry = entries.nextElement();
+	private void unzip(Path inputFile, Path outputDir) throws Exception {
+		try (ZipFile zipFile = new ZipFile(inputFile.toFile())) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
 //				File entryDestination = new File(outputDir, entry.getName());
-//				if (entry.isDirectory()) {
+				Path entryPath = outputDir.resolve(entry.getName());
+				if (entry.isDirectory()) {
 //					entryDestination.mkdirs();
-//				} else {
+					Files.createDirectories(entryPath);
+				} else {
 //					entryDestination.getParentFile().mkdirs();
-//					InputStream in = zipFile.getInputStream(entry);
-//					OutputStream out = new FileOutputStream(entryDestination);
-//					IOUtils.copy(in, out);
-//					IOUtils.closeQuietly(in);
-//					out.close();
-//				}
-//			}
-//		} finally {
-//			zipFile.close();
-//		}
-//	}
+					Files.createDirectories(entryPath.getParent());
+					try (InputStream in = zipFile.getInputStream(entry)) {
+            Files.copy(in, entryPath);
+					}
+				}
+			}
+		}
+	}
 
 	private void run(Map<String, String> env, String... command) throws Exception {
 		log("----------------------------------------------------------------------");
