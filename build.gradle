@@ -20,8 +20,10 @@ dependencies {
 }
 
 bootJar {
-	launchScript()
 	destinationDir = file(".")
+	launchScript {
+		script = file("custom.script")
+	}
 }
 
 configurations {

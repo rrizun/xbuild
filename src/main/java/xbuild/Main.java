@@ -2,9 +2,7 @@ package xbuild;
 
 import java.io.File;
 import java.lang.ProcessBuilder.Redirect;
-import java.util.List;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import org.eclipse.jgit.lib.Repository;
@@ -32,12 +30,13 @@ public class Main implements ApplicationRunner {
 		log("nonOptionArgs", args.getNonOptionArgs());
 
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-Repository repository = builder.setGitDir(new File("."))
-  .readEnvironment() // scan environment GIT_* variables
-  .findGitDir() // scan up the file system tree
-	.build();
-	
-	log(repository.getBranch());
+		Repository repository = builder
+				.setGitDir(new File(".git"))
+				// .readEnvironment() // scan environment GIT_* variables
+				// .findGitDir() // scan up the file system tree
+				.build();
+
+		log(repository.getBranch());
 
 		run("./xbuildfile");
 	}
@@ -47,12 +46,7 @@ Repository repository = builder.setGitDir(new File("."))
 		log("run", Lists.newArrayList(args));
 		log("----------------------------------------------------------------------");
 
-		final Process p = new ProcessBuilder(args)
-			.redirectError(Redirect.INHERIT)
-			.redirectOutput(Redirect.INHERIT)
-			.start();
-
-		if (p.waitFor() != 0)
+		if (new ProcessBuilder(args).redirectError(Redirect.INHERIT).redirectOutput(Redirect.INHERIT).start().waitFor() != 0)
 			throw new Exception();
 	}
 
