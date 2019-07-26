@@ -34,7 +34,6 @@ public class Main implements ApplicationRunner {
 		log("run");
 
 		// e.g., 20191231235959
-    final String timestamp = CharMatcher.anyOf("0123456789").retainFrom(Instant.now().toString()).substring(0, 14);
 
 		log("optionNames", args.getOptionNames());
 		log("nonOptionArgs", args.getNonOptionArgs());
@@ -49,6 +48,9 @@ public class Main implements ApplicationRunner {
 
       String branch = repository.getBranch();
       ObjectId head = repository.resolve("HEAD");
+      Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(head).getCommitTime());
+      log("commitTime", commitTime);
+      String timestamp = CharMatcher.anyOf("0123456789").retainFrom(commitTime.toString()).substring(0, 14);
 
       Map<Integer, String> allTags = Maps.newTreeMap();
 //      Map<Integer, String> branchTags = Maps.newTreeMap();
@@ -91,15 +93,8 @@ public class Main implements ApplicationRunner {
 
       log("nextBuildNumber", nextBuildNumber);
 
-      // e.g., xbuild-master-20191231235959-234
-      //##TODO settle on tag format
-      //##TODO settle on tag format
-      //##TODO settle on tag format
-      String newTag = String.format("xbuild-%s-%s-%s", branch, timestamp, nextBuildNumber);
-      //##TODO settle on tag format
-      //##TODO settle on tag format
-      //##TODO settle on tag format
-      
+      String newTag = new BuildTag(branch, nextBuildNumber).renderTag();
+
       log("newTag", newTag);
       
       String commit = head.abbreviate(7).name();
@@ -134,11 +129,21 @@ public class Main implements ApplicationRunner {
       // invoke xbuildfile
 
       run(tmpDir, env, "./xbuildfile");
-      
    
+      // tag
+
+      log("tag", newTag);
       git.tag().setName(newTag).call();
     }
 	}
+	
+//	private BuildTag parseTag(String tag) {
+//	  
+//	}
+//	
+//	private String renderTag(BuildTag buildTag) {
+//	  
+//	}
 
 	/**
 	 * untar
