@@ -2,7 +2,6 @@ package xbuild;
 
 import java.io.*;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.time.*;
 import java.util.*;
 import java.util.regex.*;
@@ -49,18 +48,22 @@ public class Main implements ApplicationRunner {
     try (Git git = new Git(repository)) {
 
       String branch = repository.getBranch();
-      ObjectId objectId = repository.resolve(branch);
+      ObjectId head = repository.resolve("HEAD");
 
       Map<Integer, String> allTags = Maps.newTreeMap();
-      Map<Integer, String> branchTags = Maps.newTreeMap();
+//      Map<Integer, String> branchTags = Maps.newTreeMap();
       
-//      repository.getTags()
-
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
         String tag = new File(ref.getName()).getName();
-        log(tag);
+        log("tag", tag);
         if (tag.contains("xbuild")) {
+          //##TODO settle on tag format
+          //##TODO settle on tag format
+          //##TODO settle on tag format
           int num = Integer.parseInt(Iterables.getLast(search("[0-9]+", tag)));
+          //##TODO settle on tag format
+          //##TODO settle on tag format
+          //##TODO settle on tag format
           allTags.put(num, tag);
         }
       }
@@ -69,52 +72,56 @@ public class Main implements ApplicationRunner {
       if (allTags.size()>0) {
         buildNumber = Iterables.getLast(allTags.keySet());
 
-        String tag = Iterables.getLast(allTags.values());
-        log("tag", tag);
+        String lastTag = Iterables.getLast(allTags.values());
+        log("lastTag", lastTag);
         
         try (ObjectReader reader = repository.newObjectReader()) {
           CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-          oldTreeParser.reset(reader, repository.resolve(tag+"^{tree}"));
+          oldTreeParser.reset(reader, repository.resolve(lastTag+"^{tree}"));
           CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-          newTreeParser.reset(reader, repository.resolve(branch+"^{tree}"));
+          newTreeParser.reset(reader, repository.resolve("HEAD^{tree}"));
 
           if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size()==0) {
-            throw new RuntimeException("zero diff");
+            throw new RuntimeException("no diff");
           }
         }
-        
-        
-        
       }
 
-      int buildNumberNext = ++buildNumber;
+      int nextBuildNumber = ++buildNumber;
 
-      log("buildNumberNext", buildNumberNext);
-      
+      log("nextBuildNumber", nextBuildNumber);
 
       // e.g., xbuild-master-20191231235959-234
-      String newTag = String.format("xbuild-%s-%s-%s", branch, timestamp, buildNumberNext);
+      //##TODO settle on tag format
+      //##TODO settle on tag format
+      //##TODO settle on tag format
+      String newTag = String.format("xbuild-%s-%s-%s", branch, timestamp, nextBuildNumber);
+      //##TODO settle on tag format
+      //##TODO settle on tag format
+      //##TODO settle on tag format
       
       log("newTag", newTag);
       
-      String commit = objectId.abbreviate(7).name();
+      String commit = head.abbreviate(7).name();
 
       Map<String, String> env = Maps.newHashMap();
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_COMMIT", commit);
-      env.put("XBUILD_NUMBER", ""+buildNumberNext);
+      env.put("XBUILD_NUMBER", ""+nextBuildNumber);
       env.put("XBUILD_TIMESTAMP", timestamp);
       
       log(env);
 
       ArchiveFormats.registerAll();
       
+      // archive
+      
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
       git.archive()
       .setFormat("tar")
       .setOutputStream(baos)
-      .setTree(objectId)
+      .setTree(head)
       .call();
 
       Path tmpDir = Files.createTempDirectory("xbuild");
@@ -123,12 +130,14 @@ public class Main implements ApplicationRunner {
       ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
       
       untar(in, tmpDir);
+      
+      // invoke xbuildfile
 
       run(tmpDir, env, "./xbuildfile");
-
+      
+   
+      git.tag().setName(newTag).call();
     }
-    
-		
 	}
 
 	/**
