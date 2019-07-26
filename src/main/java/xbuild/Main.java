@@ -2,11 +2,13 @@ package xbuild;
 
 import java.io.*;
 import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.time.*;
 import java.util.*;
 import java.util.regex.*;
 import java.util.zip.*;
 
+import org.apache.commons.compress.archivers.tar.*;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.archive.*;
 import org.eclipse.jgit.lib.*;
@@ -41,8 +43,8 @@ public class Main implements ApplicationRunner {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = builder
 				.setGitDir(new File(".git"))
-				// .readEnvironment() // scan environment GIT_* variables
-				// .findGitDir() // scan up the file system tree
+//				 .readEnvironment() // scan environment GIT_* variables
+//				 .findGitDir() // scan up the file system tree
 				.build();
 
 		String branch = repository.getBranch();
@@ -88,7 +90,7 @@ public class Main implements ApplicationRunner {
     try (Git git = new Git(repository)) {
       try (OutputStream out = Files.newOutputStream(tempFile)) {
         git.archive()
-        .setFormat("zip")
+        .setFormat("tar")
         .setOutputStream(out)
         .setTree(repository.resolve("master"))
         .call();
@@ -97,38 +99,77 @@ public class Main implements ApplicationRunner {
     
     Path tmpDir = Files.createTempDirectory("xbuild");
     
-    unzip(tempFile, tmpDir);
+    untar(tempFile, tmpDir);
 
-		run(env, "./xbuildfile");
+		run(tmpDir, env, "./xbuildfile");
 	}
 
-	private void unzip(Path inputFile, Path outputDir) throws Exception {
-		try (ZipFile zipFile = new ZipFile(inputFile.toFile())) {
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = entries.nextElement();
-//				File entryDestination = new File(outputDir, entry.getName());
-				Path entryPath = outputDir.resolve(entry.getName());
-				if (entry.isDirectory()) {
-//					entryDestination.mkdirs();
-					Files.createDirectories(entryPath);
-				} else {
-//					entryDestination.getParentFile().mkdirs();
-					Files.createDirectories(entryPath.getParent());
-					try (InputStream in = zipFile.getInputStream(entry)) {
-            Files.copy(in, entryPath);
-					}
-				}
-			}
-		}
-	}
+  private void untar(Path inputFile, Path outputDir) throws Exception {
+    try (TarArchiveInputStream tar = new TarArchiveInputStream(Files.newInputStream(inputFile))) {
+      TarArchiveEntry entry = null;
+      while ((entry = tar.getNextTarEntry())!=null) {
+        Path entryPath = outputDir.resolve(entry.getName());
+        if (entry.isDirectory()) {
+          Files.createDirectories(entryPath);
+        } else {
+          Files.createDirectories(entryPath.getParent());
+//          try (InputStream in = entry.getInputStream(entry))
+          {
+            Files.copy(tar, entryPath);
+            Files.setPosixFilePermissions(entryPath, intMode(entry.getMode()));
+          }
+        }
+      }
+     
+    }
+  }
+  
+  private Set<PosixFilePermission> intMode(int intMode) {
+    Set<PosixFilePermission> set = new HashSet<>();
+    for (int i = 0; i < PosixFilePermission.values().length; i++) {
+      if ((intMode & 1) == 1)
+        set.add(PosixFilePermission.values()[PosixFilePermission.values().length - i - 1]);
+      intMode >>= 1;
+    }
+    return set;
+  }
 
-	private void run(Map<String, String> env, String... command) throws Exception {
+//  private void unzip(Path inputFile, Path outputDir) throws Exception {
+//		try (ZipFile zipFile = new ZipFile(inputFile.toFile())) {
+//			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+//			while (entries.hasMoreElements()) {
+//				ZipEntry entry = entries.nextElement();
+////				File entryDestination = new File(outputDir, entry.getName());
+//				Path entryPath = outputDir.resolve(entry.getName());
+//				if (entry.isDirectory()) {
+////					entryDestination.mkdirs();
+//					Files.createDirectories(entryPath);
+//				} else {
+////					entryDestination.getParentFile().mkdirs();
+//					Files.createDirectories(entryPath.getParent());
+//					try (InputStream in = zipFile.getInputStream(entry)) {
+//            Files.copy(in, entryPath);
+//					}
+//				}
+//			}
+//		}
+//	}
+
+	/**
+	 * run
+	 * 
+	 * @param cwd
+	 * @param env
+	 * @param command
+	 * @throws Exception
+	 */
+	private void run(Path cwd, Map<String, String> env, String... command) throws Exception {
 		log("----------------------------------------------------------------------");
 		log("run", Lists.newArrayList(command));
 		log("----------------------------------------------------------------------");
 
 		ProcessBuilder builder = new ProcessBuilder(command);
+		  builder.directory(cwd.toFile());
 			builder.environment().putAll(env);
 			builder.redirectError(ProcessBuilder.Redirect.INHERIT);
 			builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
