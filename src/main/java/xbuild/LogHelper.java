@@ -17,8 +17,8 @@ public class LogHelper {
 
   public void log(Object... args) {
     List<Object> parts = Lists.newArrayList();
-    parts.add(new Date());
-    parts.add(object);
+//    parts.add(new Date());
+//    parts.add(object);
     for (Object arg : args)
       parts.add(arg);
     System.out.println(Joiner.on(" ").useForNull("null").join(parts));

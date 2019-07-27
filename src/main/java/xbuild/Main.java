@@ -32,6 +32,8 @@ public class Main implements ApplicationRunner {
 	public void run(ApplicationArguments args) throws Exception {
 
 		log("run");
+		
+		log(Lists.newArrayList(args.getSourceArgs()));
 
     Repository repository = new FileRepositoryBuilder()
         .setGitDir(new File(".git"))
@@ -54,7 +56,7 @@ public class Main implements ApplicationRunner {
       //###TODO use Set(HumanOrdering)
       //###TODO use Set(HumanOrdering)
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
-        log("ref", ref);
+//        log("ref", ref);
         if (ref.getName().contains("xbuild")) {
           //##TODO settle on tag format
           //##TODO settle on tag format
@@ -102,7 +104,6 @@ public class Main implements ApplicationRunner {
       String commit = objectId.abbreviate(7).name();
       // timestamp
       Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(objectId).getCommitTime());
-      log("commitTime", commitTime);
       String timestamp = commitTime.toString();
 
       Map<String, String> env = Maps.newHashMap();
