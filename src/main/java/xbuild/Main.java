@@ -31,9 +31,7 @@ public class Main implements ApplicationRunner {
   @Override
 	public void run(ApplicationArguments args) throws Exception {
 
-		log("run");
-		
-		log(Lists.newArrayList(args.getSourceArgs()));
+		log("run", Lists.newArrayList(args.getSourceArgs()));
 
     Repository repository = new FileRepositoryBuilder()
         .setGitDir(new File(".git"))
@@ -45,47 +43,33 @@ public class Main implements ApplicationRunner {
     String branch = repository.getBranch();
 
     try (Git git = new Git(repository)) {
-      
 
-      
-      //###TODO use Set(HumanOrdering)
-      //###TODO use Set(HumanOrdering)
-      //###TODO use Set(HumanOrdering)
-      Map<Integer, String> allTags = Maps.newTreeMap();
-      //###TODO use Set(HumanOrdering)
-      //###TODO use Set(HumanOrdering)
-      //###TODO use Set(HumanOrdering)
+      // allTags
+      Set<String> allTags = Sets.newTreeSet(new HumanComparator());
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
-//        log("ref", ref);
-        if (ref.getName().contains("xbuild")) {
-          //##TODO settle on tag format
-          //##TODO settle on tag format
-          //##TODO settle on tag format
-          int num = Integer.parseInt(Iterables.getLast(search("[0-9]+", ref.getName())));
-          //##TODO settle on tag format
-          //##TODO settle on tag format
-          //##TODO settle on tag format
-          allTags.put(num, ref.getName());
-        }
+        if (ref.getName().contains("xbuild"))
+          allTags.add(ref.getName());
       }
-
-
 
       int buildNumber = 1;
       String revision = "HEAD";
       String tag = String.format("xbuild-%s-%s", branch, buildNumber);
+      
       if (allTags.size() > 0) {
-        buildNumber = Iterables.getLast(allTags.keySet());
+        
+        buildNumber = Integer.parseInt(Iterables.getLast(search("[0-9]+", Iterables.getLast(allTags))));
         revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
         tag = String.format("xbuild-%s-%s", branch, buildNumber);
+        
         // are we creating a new tag?
-        if (isCreateNewTag(args)) {
-          // yes
+        if (isCreateNewTag(args)) { // yes
+          
           ++buildNumber;
           revision = "HEAD";
           tag = String.format("xbuild-%s-%s", branch, buildNumber);
+          
           // is there a diff?
-          String lastTag = Iterables.getLast(allTags.values());
+          String lastTag = Iterables.getLast(allTags);
           log("lastTag", lastTag);
           try (ObjectReader reader = repository.newObjectReader()) {
             CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
