@@ -1,3 +1,4 @@
 #!/bin/sh
-gradle bootrun
-#gradle bootrun --args foo
+rm xbuild.jar
+rm -fR bin build
+gradle clean bootjar
