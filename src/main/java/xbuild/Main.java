@@ -15,7 +15,6 @@ import org.eclipse.jgit.treewalk.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 
-import com.google.common.base.*;
 import com.google.common.collect.*;
 
 /**
@@ -25,7 +24,7 @@ import com.google.common.collect.*;
 public class Main implements ApplicationRunner {
 
 	public static void main(String[] args) {
-	  args = new String[] {"--tag"};
+//	  args = new String[] {"--tag"};
 		SpringApplication.run(Main.class, args);
 	}
 
