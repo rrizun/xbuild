@@ -2,4 +2,4 @@
 rm -f xbuild.jar
 rm -fR bin build
 gradle clean bootjar
-cp xbuild.jar xbuild
+mv xbuild.jar xbuild
