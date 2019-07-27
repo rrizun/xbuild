@@ -25,84 +25,91 @@ import com.google.common.collect.*;
 public class Main implements ApplicationRunner {
 
 	public static void main(String[] args) {
+	  args = new String[] {"--tag"};
 		SpringApplication.run(Main.class, args);
 	}
 
-	@Override
+  @Override
 	public void run(ApplicationArguments args) throws Exception {
 
 		log("run");
 
-		// e.g., 20191231235959
+    Repository repository = new FileRepositoryBuilder()
+        .setGitDir(new File(".git"))
+//         .readEnvironment() // scan environment GIT_* variables
+//         .findGitDir() // scan up the file system tree
+        .build();
 
-		log("optionNames", args.getOptionNames());
-		log("nonOptionArgs", args.getNonOptionArgs());
-
-		Repository repository = new FileRepositoryBuilder()
-				.setGitDir(new File(".git"))
-//				 .readEnvironment() // scan environment GIT_* variables
-//				 .findGitDir() // scan up the file system tree
-				.build();
+    // branch
+    String branch = repository.getBranch();
 
     try (Git git = new Git(repository)) {
-
-      String branch = repository.getBranch();
-      ObjectId head = repository.resolve("HEAD");
-      Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(head).getCommitTime());
-      log("commitTime", commitTime);
-      String timestamp = CharMatcher.anyOf("0123456789").retainFrom(commitTime.toString()).substring(0, 14);
-
-      Map<Integer, String> allTags = Maps.newTreeMap();
-//      Map<Integer, String> branchTags = Maps.newTreeMap();
       
+
+      
+      //###TODO use Set(HumanOrdering)
+      //###TODO use Set(HumanOrdering)
+      //###TODO use Set(HumanOrdering)
+      Map<Integer, String> allTags = Maps.newTreeMap();
+      //###TODO use Set(HumanOrdering)
+      //###TODO use Set(HumanOrdering)
+      //###TODO use Set(HumanOrdering)
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
-        String tag = new File(ref.getName()).getName();
-        log("tag", tag);
-        if (tag.contains("xbuild")) {
+        log("ref", ref);
+        if (ref.getName().contains("xbuild")) {
           //##TODO settle on tag format
           //##TODO settle on tag format
           //##TODO settle on tag format
-          int num = Integer.parseInt(Iterables.getLast(search("[0-9]+", tag)));
+          int num = Integer.parseInt(Iterables.getLast(search("[0-9]+", ref.getName())));
           //##TODO settle on tag format
           //##TODO settle on tag format
           //##TODO settle on tag format
-          allTags.put(num, tag);
+          allTags.put(num, ref.getName());
         }
       }
-      
-      int buildNumber = 0;
-      if (allTags.size()>0) {
+
+
+
+      int buildNumber = 1;
+      String revision = "HEAD";
+      String tag = String.format("xbuild-%s-%s", branch, buildNumber);
+      if (allTags.size() > 0) {
         buildNumber = Iterables.getLast(allTags.keySet());
-
-        String lastTag = Iterables.getLast(allTags.values());
-        log("lastTag", lastTag);
-        
-        try (ObjectReader reader = repository.newObjectReader()) {
-          CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-          oldTreeParser.reset(reader, repository.resolve(lastTag+"^{tree}"));
-          CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-          newTreeParser.reset(reader, repository.resolve("HEAD^{tree}"));
-
-          if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size()==0) {
-            throw new RuntimeException("no diff");
+        revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
+        tag = String.format("xbuild-%s-%s", branch, buildNumber);
+        // are we creating a new tag?
+        if (isCreateNewTag(args)) {
+          // yes
+          ++buildNumber;
+          revision = "HEAD";
+          tag = String.format("xbuild-%s-%s", branch, buildNumber);
+          // is there a diff?
+          String lastTag = Iterables.getLast(allTags.values());
+          log("lastTag", lastTag);
+          try (ObjectReader reader = repository.newObjectReader()) {
+            CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+            oldTreeParser.reset(reader, repository.resolve(lastTag+"^{tree}"));
+            CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
+            newTreeParser.reset(reader, repository.resolve(revision+"^{tree}"));
+            if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size() == 0)
+              throw new RuntimeException("no diff"); // no
           }
         }
       }
-
-      int nextBuildNumber = ++buildNumber;
-
-      log("nextBuildNumber", nextBuildNumber);
-
-      String newTag = new BuildTag(branch, nextBuildNumber).renderTag();
-
-      log("newTag", newTag);
       
-      String commit = head.abbreviate(7).name();
+      // objectId
+      ObjectId objectId = repository.resolve(revision+"^{commit}");
+      // commit
+      String commit = objectId.abbreviate(7).name();
+      // timestamp
+      Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(objectId).getCommitTime());
+      log("commitTime", commitTime);
+      String timestamp = commitTime.toString();
 
       Map<String, String> env = Maps.newHashMap();
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_COMMIT", commit);
-      env.put("XBUILD_NUMBER", ""+nextBuildNumber);
+      env.put("XBUILD_NUMBER", ""+buildNumber);
       env.put("XBUILD_TIMESTAMP", timestamp);
       
       log(env);
@@ -114,11 +121,11 @@ public class Main implements ApplicationRunner {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
       git.archive()
-      .setFormat("tar")
-      .setOutputStream(baos)
-      .setTree(head)
-      .call();
-
+        .setFormat("tar")
+        .setOutputStream(baos)
+        .setTree(objectId)
+        .call();
+      
       Path tmpDir = Files.createTempDirectory("xbuild");
       log(tmpDir);
       
@@ -129,22 +136,31 @@ public class Main implements ApplicationRunner {
       // invoke xbuildfile
 
       run(tmpDir, env, "./xbuildfile");
-   
-      // tag
 
-      log("tag", newTag);
-      git.tag().setName(newTag).call();
+      // xbuild --tag
+      if (isCreateNewTag(args)) {
+        log("tag", tag);
+        git.tag().setName(tag).call();
+      }
+      
+      // xbuild xdeploy-prod
+      if (isRunDeployScript(args)) {
+        run(tmpDir, env, String.format("./%s", args.getNonOptionArgs().get(0)));
+      }
+
     }
 	}
 	
-//	private BuildTag parseTag(String tag) {
-//	  
-//	}
-//	
-//	private String renderTag(BuildTag buildTag) {
-//	  
-//	}
-
+  // isCreateNewTag
+	private boolean isCreateNewTag(ApplicationArguments args) {
+	  return args.getOptionNames().contains("tag");
+	}
+	
+	// isRunDeployScript
+  private boolean isRunDeployScript(ApplicationArguments args) {
+    return args.getNonOptionArgs().size() > 0;
+  }
+	
 	/**
 	 * untar
 	 * 
