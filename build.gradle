@@ -22,12 +22,13 @@ dependencies {
 }
 
 bootJar {
+	archiveName="xbuild"
 	destinationDir = file(".")
 	launchScript {
 		script = file("custom.script")
 	}
 }
 
-configurations {
-    all*.exclude module : 'spring-boot-starter-logging'
-}
+//configurations {
+//    all*.exclude module : 'spring-boot-starter-logging'
+//}
