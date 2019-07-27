@@ -1,5 +1,5 @@
 #!/bin/sh -ex
-rm xbuild.jar
+rm -f xbuild.jar
 rm -fR bin build
 gradle clean bootjar
 cp xbuild.jar xbuild
