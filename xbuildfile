@@ -2,3 +2,4 @@
 rm -f xbuild
 rm -fR bin build
 gradle clean bootjar
+if [ "$XBUILD_NUMBER" ]; then echo "xbuild $XBUILD_NUMBER $XBUILD_COMMIT $XBUILD_TIMESTAMP" > src/main/resources/banner.txt; fi
