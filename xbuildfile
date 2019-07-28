@@ -1,4 +1,4 @@
 #!/bin/sh -ex
-rm -f xbuild.jar
+rm -f xbuild
 rm -fR bin build
 gradle clean bootjar

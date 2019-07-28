@@ -52,7 +52,7 @@ public class Main implements ApplicationRunner {
       }
 
       int buildNumber = 1;
-      String revision = "HEAD";
+      String revision = "origin/master";
       String tag = String.format("xbuild-%s-%s", branch, buildNumber);
       
       if (allTags.size() > 0) {
@@ -61,25 +61,29 @@ public class Main implements ApplicationRunner {
         revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
         tag = String.format("xbuild-%s-%s", branch, buildNumber);
         
-        // are we creating a new tag?
+        // are we trying to create a new tag?
         if (isCreateNewTag(args)) { // yes
-          
+
           ++buildNumber;
-          revision = "HEAD";
+          revision = "origin/master";
           tag = String.format("xbuild-%s-%s", branch, buildNumber);
-          
+
           // is there a diff?
-          String lastTag = Iterables.getLast(allTags);
+          String lastTag = Iterables.getLast(allTags); // e.g., xbuild-master-5
           log("lastTag", lastTag);
           try (ObjectReader reader = repository.newObjectReader()) {
             CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
             oldTreeParser.reset(reader, repository.resolve(lastTag+"^{tree}"));
             CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
             newTreeParser.reset(reader, repository.resolve(revision+"^{tree}"));
-            if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size() == 0)
-              throw new RuntimeException("no diff"); // no
+            log("git diff", lastTag, revision);
+            if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size() == 0) {
+              // no- there is no diff
+              throw new RuntimeException("no diff");
+            }
           }
         }
+        
       }
       
       // objectId
