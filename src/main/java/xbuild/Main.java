@@ -131,7 +131,10 @@ public class Main implements ApplicationRunner {
       // xbuild --tag
       if (isCreateNewTag(args)) {
         log("tag", tag);
+        // git tag
         git.tag().setName(tag).call();
+        // git push --tags
+        git.push().setPushTags().call();
       }
       
       // xbuild xdeploy-prod
