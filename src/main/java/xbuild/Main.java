@@ -123,8 +123,10 @@ public class Main implements ApplicationRunner {
       untar(in, tmpDir);
       
       // invoke xbuildfile
-
-      run(tmpDir, env, "./xbuildfile");
+      if (new File("xbuildfile").exists())
+        run(tmpDir, env, "./xbuildfile");
+      else if (new File(".xbuild").exists()) // legacy
+        run(tmpDir, env, "./.xbuild");
 
       // xbuild --tag
       if (isCreateNewTag(args)) {
