@@ -5,3 +5,4 @@
 bin
 build
 xbuild
+src/main/resources/banner.txt
