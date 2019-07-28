@@ -110,6 +110,7 @@ public class Main implements ApplicationRunner {
       
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
+      log("git archive", commit);
       git.archive()
         .setFormat("tar")
         .setOutputStream(baos)
@@ -131,10 +132,11 @@ public class Main implements ApplicationRunner {
 
       // xbuild --tag
       if (isCreateNewTag(args)) {
-        log("tag", tag);
         // git tag
+        log("git tag", tag);
         Ref ref = git.tag().setName(tag).call();
         // git push origin tag
+        log("git push", remote, tag);
         RefSpec refSpec = new RefSpec(ref.getName());
         git.push().setRemote(remote).setRefSpecs(refSpec).call();
       }
