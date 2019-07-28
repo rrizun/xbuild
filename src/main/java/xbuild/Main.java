@@ -39,8 +39,11 @@ public class Main implements ApplicationRunner {
 //         .findGitDir() // scan up the file system tree
         .build();
 
+    // remote
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    String remote = repository.getRemoteNames().iterator().next(); // e.g., "origin"
     // branch
-    String branch = repository.getBranch();
+    String branch = repository.getBranch(); // e.g., "master"
 
     try (Git git = new Git(repository)) {
 
@@ -52,7 +55,7 @@ public class Main implements ApplicationRunner {
       }
 
       int buildNumber = 1;
-      String revision = "origin/master";
+      String revision = String.format("%s/%s", remote, branch);
       String tag = String.format("xbuild-%s-%s", branch, buildNumber);
       
       if (allTags.size() > 0) {
@@ -65,7 +68,7 @@ public class Main implements ApplicationRunner {
         if (isCreateNewTag(args)) { // yes
 
           ++buildNumber;
-          revision = "origin/master";
+          revision = String.format("%s/%s", remote, branch);
           tag = String.format("xbuild-%s-%s", branch, buildNumber);
 
           // is there a diff?
