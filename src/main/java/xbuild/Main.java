@@ -12,6 +12,7 @@ import org.eclipse.jgit.archive.*;
 import org.eclipse.jgit.lib.*;
 import org.eclipse.jgit.revwalk.*;
 import org.eclipse.jgit.storage.file.*;
+import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.treewalk.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
@@ -132,9 +133,10 @@ public class Main implements ApplicationRunner {
       if (isCreateNewTag(args)) {
         log("tag", tag);
         // git tag
-        git.tag().setName(tag).call();
-        // git push --tags
-        git.push().setPushTags().call();
+        Ref ref = git.tag().setName(tag).call();
+        // git push origin tag
+        RefSpec refSpec = new RefSpec(ref.getName());
+        git.push().setRemote(remote).setRefSpecs(refSpec).call();
       }
       
       // xbuild xdeploy-prod
