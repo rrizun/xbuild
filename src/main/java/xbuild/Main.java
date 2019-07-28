@@ -10,6 +10,7 @@ import org.apache.commons.compress.archivers.tar.*;
 import org.eclipse.jgit.api.*;
 import org.eclipse.jgit.archive.*;
 import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.revwalk.*;
 import org.eclipse.jgit.storage.file.*;
 import org.eclipse.jgit.treewalk.*;
 import org.springframework.boot.*;
@@ -89,18 +90,15 @@ public class Main implements ApplicationRunner {
         
       }
       
-      // objectId
-      ObjectId objectId = repository.resolve(revision+"^{commit}");
       // commit
-      String commit = objectId.abbreviate(7).name();
+      RevCommit commit = repository.parseCommit(repository.resolve(revision+"^{commit}"));
       // timestamp
-      Instant commitTime = Instant.ofEpochSecond(repository.parseCommit(objectId).getCommitTime());
-      String timestamp = commitTime.toString();
+      String timestamp = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
       Map<String, String> env = Maps.newHashMap();
       env.put("XBUILD_BRANCH", branch);
-      env.put("XBUILD_COMMIT", commit);
       env.put("XBUILD_NUMBER", ""+buildNumber);
+      env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
       env.put("XBUILD_TIMESTAMP", timestamp);
       
       log(env);
@@ -114,7 +112,7 @@ public class Main implements ApplicationRunner {
       git.archive()
         .setFormat("tar")
         .setOutputStream(baos)
-        .setTree(objectId)
+        .setTree(commit)
         .call();
       
       Path tmpDir = Files.createTempDirectory("xbuild");
