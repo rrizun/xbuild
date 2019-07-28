@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Posix {
   /**
-   * perms
+   * returns the set of permissions for the given mode
    * 
    * @param intMode
    * @return
