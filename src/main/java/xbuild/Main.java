@@ -110,7 +110,7 @@ public class Main implements ApplicationRunner {
       
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
-      log("git archive", commit);
+      log("git archive", commit.abbreviate(7).name());
       git.archive()
         .setFormat("tar")
         .setOutputStream(baos)
