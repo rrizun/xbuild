@@ -97,9 +97,11 @@ public class Main implements ApplicationRunner {
       String timestamp = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
       Map<String, String> env = Maps.newHashMap();
+      env.put("XBUILD", "1");
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_NUMBER", ""+buildNumber);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
+      env.put("XBUILD_DATETIME", timestamp);
       env.put("XBUILD_TIMESTAMP", timestamp);
       
       log(env);
@@ -127,8 +129,8 @@ public class Main implements ApplicationRunner {
       // invoke xbuildfile
       if (new File("xbuildfile").exists())
         run(tmpDir, env, "./xbuildfile");
-      else if (new File(".xbuild").exists()) // legacy
-        run(tmpDir, env, "./.xbuild");
+      else if (new File(".xbuild").exists())
+        run(tmpDir, env, "./.xbuild"); // legacy
 
       // xbuild --tag
       if (isCreateNewTag(args)) {
