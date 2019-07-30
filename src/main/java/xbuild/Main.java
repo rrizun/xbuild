@@ -102,7 +102,6 @@ public class Main implements ApplicationRunner {
       env.put("XBUILD_NUMBER", ""+buildNumber);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
       env.put("XBUILD_DATETIME", timestamp);
-      env.put("XBUILD_TIMESTAMP", timestamp);
       
       log(env);
 
