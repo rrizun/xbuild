@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.*;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.InfoProperties;
 import org.springframework.boot.info.InfoProperties.*;
+import org.springframework.core.env.*;
 
 import com.google.common.collect.*;
 
@@ -37,8 +38,14 @@ public class Main implements ApplicationRunner {
 //	  args = new String[] {"--tag"};
 		SpringApplication.run(Main.class, args);
   }
-  
-  public Main(BuildProperties buildProperties) {
+	
+	@Value("${spring.application.name}")
+	private String applicationName;
+	
+  private final Environment env;
+
+  public Main(BuildProperties buildProperties, Environment env) {
+    this.env = env;
     Map<String, Object> m = Maps.newHashMap();
     for (Entry entry : buildProperties)
       m.put(entry.getKey(), entry.getValue());
@@ -48,7 +55,11 @@ public class Main implements ApplicationRunner {
   @Override
 	public void run(ApplicationArguments args) throws Exception {
 
-		log("run", Lists.newArrayList(args.getSourceArgs()));
+    log("app", applicationName);
+    log("profiles", Lists.newArrayList(env.getActiveProfiles()));
+    log("defaults", Lists.newArrayList(env.getDefaultProfiles()));
+
+    log("run", Lists.newArrayList(args.getSourceArgs()));
 
     Repository repository = new FileRepositoryBuilder()
         .setGitDir(new File(".git"))

@@ -10,6 +10,8 @@ targetCompatibility = 1.8
 
 repositories {
 	jcenter()
+	mavenCentral()
+    maven { url "https://repo.spring.io/release" }
 }
 
 dependencies {
@@ -19,6 +21,7 @@ dependencies {
 	implementation "org.eclipse.jgit:org.eclipse.jgit:+"
 	implementation "org.eclipse.jgit:org.eclipse.jgit.archive:+"
 	implementation "org.springframework.boot:spring-boot-starter"
+    implementation "org.springframework.cloud:spring-cloud-aws-context:+"
 }
 
 bootJar {
