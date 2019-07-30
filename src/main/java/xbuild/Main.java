@@ -18,8 +18,6 @@ import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.boot.info.InfoProperties;
-import org.springframework.boot.info.InfoProperties.*;
 import org.springframework.core.env.*;
 
 import com.google.common.collect.*;
@@ -47,7 +45,7 @@ public class Main implements ApplicationRunner {
   public Main(BuildProperties buildProperties, Environment env) {
     this.env = env;
     Map<String, Object> m = Maps.newHashMap();
-    for (Entry entry : buildProperties)
+    for (BuildProperties.Entry entry : buildProperties)
       m.put(entry.getKey(), entry.getValue());
     log(m);
   }
