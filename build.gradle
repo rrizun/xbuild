@@ -29,6 +29,10 @@ bootJar {
 	}
 }
 
+springBoot {
+	buildInfo()
+}
+
 //configurations {
 //    all*.exclude module : 'spring-boot-starter-logging'
 //}
