@@ -14,8 +14,12 @@ import org.eclipse.jgit.revwalk.*;
 import org.eclipse.jgit.storage.file.*;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.treewalk.*;
+import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.boot.info.InfoProperties;
+import org.springframework.boot.info.InfoProperties.*;
 
 import com.google.common.collect.*;
 
@@ -25,10 +29,21 @@ import com.google.common.collect.*;
 @SpringBootApplication
 public class Main implements ApplicationRunner {
 
+  static {
+    ArchiveFormats.registerAll();
+  }
+
 	public static void main(String[] args) {
 //	  args = new String[] {"--tag"};
 		SpringApplication.run(Main.class, args);
-	}
+  }
+  
+  public Main(BuildProperties buildProperties) {
+    Map<String, Object> m = Maps.newHashMap();
+    for (Entry entry : buildProperties)
+      m.put(entry.getKey(), entry.getValue());
+    log(m);
+  }
 
   @Override
 	public void run(ApplicationArguments args) throws Exception {
@@ -105,8 +120,6 @@ public class Main implements ApplicationRunner {
       
       log(env);
 
-      ArchiveFormats.registerAll();
-      
       // archive
       
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
