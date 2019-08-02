@@ -28,32 +28,28 @@ import com.google.common.collect.*;
 @SpringBootApplication
 public class Main implements ApplicationRunner {
 
-  static {
-    ArchiveFormats.registerAll();
-  }
-
 	public static void main(String[] args) {
 //	  args = new String[] {"--tag"};
 		SpringApplication.run(Main.class, args);
   }
 	
-	@Value("${spring.application.name}")
-	private String applicationName;
-	
+  static {
+    ArchiveFormats.registerAll();
+  }
+
   private final Environment env;
 
-  public Main(BuildProperties buildProperties, Environment env) {
+  public Main(Environment env) {
     this.env = env;
-    Map<String, Object> m = Maps.newHashMap();
-    for (BuildProperties.Entry entry : buildProperties)
-      m.put(entry.getKey(), entry.getValue());
-    log(m);
+    // Map<String, Object> m = Maps.newHashMap();
+    // for (BuildProperties.Entry entry : buildProperties)
+    //   m.put(entry.getKey(), entry.getValue());
+    // log(m);
   }
 
   @Override
 	public void run(ApplicationArguments args) throws Exception {
 
-    log("app", applicationName);
     log("profiles", Lists.newArrayList(env.getActiveProfiles()));
     log("defaults", Lists.newArrayList(env.getDefaultProfiles()));
 
@@ -67,37 +63,48 @@ public class Main implements ApplicationRunner {
 
     // remote
     //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    String remote = repository.getRemoteNames().iterator().next(); // e.g., "origin"
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    final String remote = repository.getRemoteNames().iterator().next(); // e.g., "origin"
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
     // branch
-    String branch = repository.getBranch(); // e.g., "master"
-
+    final String branch = repository.getBranch(); // e.g., "master"
+    
     try (Git git = new Git(repository)) {
 
-      // allTags
+      // build latest
+      // xbuild
+      
+      // build latest and create new tag
+      // xbuild --tag
+
+      // build 234
+      // xbuild --tag=234
+
+      // buildNumber
+      int buildNumber = 0;
+      // revision
+      String revision = String.format("%s/%s", remote, branch);
+
+      // get latest buildNumber
       Set<String> allTags = Sets.newTreeSet(new HumanComparator());
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
+        log(ref);
         if (ref.getName().contains("xbuild"))
           allTags.add(ref.getName());
       }
-
-      int buildNumber = 1;
-      String revision = String.format("%s/%s", remote, branch);
-      String tag = String.format("xbuild-%s-%s", branch, buildNumber);
-      
-      if (allTags.size() > 0) {
-        
+      if (allTags.size()>0)
         buildNumber = Integer.parseInt(Iterables.getLast(search("[0-9]+", Iterables.getLast(allTags))));
-        revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
-        tag = String.format("xbuild-%s-%s", branch, buildNumber);
-        
-        // are we trying to create a new tag?
-        if (isCreateNewTag(args)) { // yes
 
+      // --tag?
+      if (args.getOptionNames().contains("tag")) {
+        // yes
+        // create new tag or use existing tag?
+        if (args.getOptionValues("tag").size()==0) {
+          // create new tag
           ++buildNumber;
-          revision = String.format("%s/%s", remote, branch);
-          tag = String.format("xbuild-%s-%s", branch, buildNumber);
-
-          // is there a diff?
           String lastTag = Iterables.getLast(allTags); // e.g., xbuild-master-5
           log("lastTag", lastTag);
           try (ObjectReader reader = repository.newObjectReader()) {
@@ -111,17 +118,24 @@ public class Main implements ApplicationRunner {
               throw new RuntimeException("no diff");
             }
           }
+        } else {
+          // use existing tag
+          for (String value : args.getOptionValues("tag")) {
+            buildNumber = Integer.parseInt(value);
+            revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
+          }
         }
-        
       }
-      
+
+      String tag = String.format("xbuild-%s-%s", branch, buildNumber);
+
       // commit
       RevCommit commit = repository.parseCommit(repository.resolve(revision+"^{commit}"));
       // timestamp
       String timestamp = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
       Map<String, String> env = Maps.newHashMap();
-      env.put("XBUILD", "1");
+      env.put("XBUILD", "1"); // signal that xbuild is running
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_NUMBER", ""+buildNumber);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
@@ -164,23 +178,17 @@ public class Main implements ApplicationRunner {
         git.push().setRemote(remote).setRefSpecs(refSpec).call();
       }
       
-      // xbuild xdeploy-prod
-      if (isRunDeployScript(args)) {
-        run(tmpDir, env, String.format("./%s", args.getNonOptionArgs().get(0)));
-      }
+      // run deploy scripts, e.g., xdeploy-dev
+      for (String script : args.getNonOptionArgs())
+        run(tmpDir, env, String.format("./%s", script));
 
     }
 	}
 	
   // isCreateNewTag
 	private boolean isCreateNewTag(ApplicationArguments args) {
-	  return args.getOptionNames().contains("tag");
+	  return args.getOptionNames().contains("tag") && args.getOptionValues("tag").size()==0;
 	}
-	
-	// isRunDeployScript
-  private boolean isRunDeployScript(ApplicationArguments args) {
-    return args.getNonOptionArgs().size() > 0;
-  }
 	
 	/**
 	 * untar
@@ -224,7 +232,7 @@ public class Main implements ApplicationRunner {
 			builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
 		if (builder.start().waitFor() != 0)
-			throw new Exception();
+			throw new Exception(cwd.toString()+env.toString()+command.toString());
 	}
 
 	/**
