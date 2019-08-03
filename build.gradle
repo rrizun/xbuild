@@ -21,7 +21,7 @@ dependencies {
 	implementation "org.eclipse.jgit:org.eclipse.jgit:+"
 	implementation "org.eclipse.jgit:org.eclipse.jgit.archive:+"
 	implementation "org.springframework.boot:spring-boot-starter"
-    implementation "org.springframework.cloud:spring-cloud-aws-context:+"
+    // implementation "org.springframework.cloud:spring-cloud-aws-context:+"
 }
 
 bootJar {
@@ -32,9 +32,9 @@ bootJar {
 	}
 }
 
-springBoot {
-	buildInfo()
-}
+// springBoot {
+// 	buildInfo()
+// }
 
 //configurations {
 //    all*.exclude module : 'spring-boot-starter-logging'
