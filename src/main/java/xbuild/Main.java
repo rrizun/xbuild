@@ -16,6 +16,8 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.treewalk.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.ApplicationContext;
 
 import com.google.common.collect.*;
 
@@ -32,6 +34,12 @@ public class Main implements ApplicationRunner {
 	
   static {
     ArchiveFormats.registerAll();
+  }
+
+  public Main(ApplicationContext context) {
+    BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+    if (buildProperties != null)
+      log("buildProperties", buildProperties);
   }
 
   @Override
