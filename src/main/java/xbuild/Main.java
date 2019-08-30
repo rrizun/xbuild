@@ -14,11 +14,8 @@ import org.eclipse.jgit.revwalk.*;
 import org.eclipse.jgit.storage.file.*;
 import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.treewalk.*;
-import org.springframework.beans.factory.annotation.*;
 import org.springframework.boot.*;
 import org.springframework.boot.autoconfigure.*;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.core.env.*;
 
 import com.google.common.collect.*;
 
@@ -30,116 +27,108 @@ public class Main implements ApplicationRunner {
 
 	public static void main(String[] args) {
 //	  args = new String[] {"--tag"};
-		SpringApplication.run(Main.class, args);
+    SpringApplication.run(Main.class, args);
   }
 	
   static {
     ArchiveFormats.registerAll();
   }
 
-  private final Environment env;
-
-  public Main(Environment env) {
-    this.env = env;
-    // Map<String, Object> m = Maps.newHashMap();
-    // for (BuildProperties.Entry entry : buildProperties)
-    //   m.put(entry.getKey(), entry.getValue());
-    // log(m);
-  }
-
   @Override
 	public void run(ApplicationArguments args) throws Exception {
 
-    log("profiles", Lists.newArrayList(env.getActiveProfiles()));
-    log("defaults", Lists.newArrayList(env.getDefaultProfiles()));
-
     log("run", Lists.newArrayList(args.getSourceArgs()));
 
+    //###TODO finalize this
+    //###TODO finalize this
+    //###TODO finalize this
     Repository repository = new FileRepositoryBuilder()
         .setGitDir(new File(".git"))
-//         .readEnvironment() // scan environment GIT_* variables
-//         .findGitDir() // scan up the file system tree
+         .readEnvironment() // scan environment GIT_* variables
+         .findGitDir() // scan up the file system tree
         .build();
+    //###TODO finalize this
+    //###TODO finalize this
+    //###TODO finalize this
 
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
     // remote
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
     final String remote = repository.getRemoteNames().iterator().next(); // e.g., "origin"
     //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
     //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
     //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    
     // branch
     final String branch = repository.getBranch(); // e.g., "master"
     
     try (Git git = new Git(repository)) {
 
-      // build latest
-      // xbuild
-      
-      // build latest and create new tag
-      // xbuild --tag
+      // rev=remote/branch
+      // if script then rev=latest
+      // if number then rev=number
 
-      // build 234
-      // xbuild --tag=234
+      // xbuild # build remote/branch (e.g., origin/master) and create new tag
+      // xbuild deploy-dev # build latest and run deploy script
+      // xbuild deploy-dev 234 # build 234 and run deploy script
 
-      // buildNumber
-      int buildNumber = 0;
+      // number
+      int number = 0;
       // revision
       String revision = String.format("%s/%s", remote, branch);
 
       // get latest buildNumber
-      Set<String> allTags = Sets.newTreeSet(new HumanComparator());
+      Map<Integer, String> allTags = Maps.newTreeMap();
+      Map<String, Integer> tagToNumber = Maps.newTreeMap();
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
-        log(ref);
-        if (ref.getName().contains("xbuild"))
-          allTags.add(ref.getName());
+        // e.g., xbuild-234-master
+        if (ref.getName().contains("xbuild")) {
+          // extract num from ref
+          int num = Integer.parseInt(search("[0-9]+", ref.getName()).iterator().next());
+          allTags.put(num, ref.getName());
+        }
       }
       if (allTags.size()>0)
-        buildNumber = Integer.parseInt(Iterables.getLast(search("[0-9]+", Iterables.getLast(allTags))));
-
-      // --tag?
-      if (args.getOptionNames().contains("tag")) {
+        number = Iterables.getLast(allTags.keySet());
+      
+      // % xbuild ?
+      if (args.getNonOptionArgs().size() == 0) {
         // yes
-        // create new tag or use existing tag?
-        if (args.getOptionValues("tag").size()==0) {
-          // create new tag
-          ++buildNumber;
-          String lastTag = Iterables.getLast(allTags); // e.g., xbuild-master-5
-          log("lastTag", lastTag);
-          try (ObjectReader reader = repository.newObjectReader()) {
-            CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
-            oldTreeParser.reset(reader, repository.resolve(lastTag+"^{tree}"));
-            CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
-            newTreeParser.reset(reader, repository.resolve(revision+"^{tree}"));
-            log("git diff", lastTag, revision);
-            if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size() == 0) {
-              // no- there is no diff
-              throw new RuntimeException("no diff");
-            }
-          }
-        } else {
-          // use existing tag
-          for (String value : args.getOptionValues("tag")) {
-            buildNumber = Integer.parseInt(value);
-            revision = String.format("refs/tags/xbuild-%s-%s", branch, buildNumber);
+        ++number;
+        String lastTag = Iterables.getLast(allTags.values()); // e.g., xbuild-234-master
+        log("lastTag", lastTag);
+        try (ObjectReader reader = repository.newObjectReader()) {
+          CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
+          oldTreeParser.reset(reader, repository.resolve(lastTag + "^{tree}"));
+          CanonicalTreeParser newTreeParser = new CanonicalTreeParser();
+          newTreeParser.reset(reader, repository.resolve(revision + "^{tree}"));
+          log("git diff", lastTag, revision);
+          if (git.diff().setOldTree(oldTreeParser).setNewTree(newTreeParser).call().size() == 0) {
+            throw new RuntimeException("no diff");
           }
         }
       }
 
-      String tag = String.format("xbuild-%s-%s", branch, buildNumber);
+      // % xbuild number ?
+      for (String arg : args.getNonOptionArgs()) {
+        if (arg.matches("[0-9]+")) {
+          number = Integer.parseInt(arg);
+          revision = Objects.requireNonNull(allTags.get(number), "bad xbuild number");
+        }
+      }
 
       // commit
       RevCommit commit = repository.parseCommit(repository.resolve(revision+"^{commit}"));
       // timestamp
-      String timestamp = Instant.ofEpochSecond(commit.getCommitTime()).toString();
+      String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
-      Map<String, String> env = Maps.newHashMap();
-      env.put("XBUILD", "1"); // signal that xbuild is running
+      Map<String, String> env = Maps.newTreeMap();
+      env.put("XBUILD", "1"); // "xbuild is running" signal
       env.put("XBUILD_BRANCH", branch);
-      env.put("XBUILD_NUMBER", ""+buildNumber);
+      env.put("XBUILD_NUMBER", ""+number);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
-      env.put("XBUILD_DATETIME", timestamp);
+      env.put("XBUILD_COMMITTIME", commitTime);
       
       log(env);
 
@@ -164,11 +153,12 @@ public class Main implements ApplicationRunner {
       // invoke xbuildfile
       if (new File("xbuildfile").exists())
         run(tmpDir, env, "./xbuildfile");
-      else if (new File(".xbuild").exists())
-        run(tmpDir, env, "./.xbuild"); // legacy
+      else if (new File(".xbuild").exists()) // legacy
+        run(tmpDir, env, "./.xbuild");
 
-      // xbuild --tag
-      if (isCreateNewTag(args)) {
+      // % xbuild ?
+      if (args.getNonOptionArgs().size()==0) {
+        String tag = String.format("xbuild-%s-%s", number, branch);
         // git tag
         log("git tag", tag);
         Ref ref = git.tag().setName(tag).call();
@@ -178,19 +168,16 @@ public class Main implements ApplicationRunner {
         git.push().setRemote(remote).setRefSpecs(refSpec).call();
       }
       
-      // run deploy scripts, e.g., xdeploy-dev
-      for (String script : args.getNonOptionArgs())
-        run(tmpDir, env, String.format("./%s", script));
+      // run deploy script, e.g., xdeploy-dev
+      for (String arg : args.getNonOptionArgs()) {
+        if (new File(arg).exists())
+          run(tmpDir, env, String.format("./%s", arg));
+      }
 
     }
 	}
-	
-  // isCreateNewTag
-	private boolean isCreateNewTag(ApplicationArguments args) {
-	  return args.getOptionNames().contains("tag") && args.getOptionValues("tag").size()==0;
-	}
-	
-	/**
+
+  /**
 	 * untar
 	 * 
 	 * @param in
@@ -239,12 +226,12 @@ public class Main implements ApplicationRunner {
 	 * search
 	 * 
 	 * @param regex
-	 * @param s
+	 * @param input
 	 * @return
 	 */
-  private List<String> search(String regex, String s) {
+  private List<String> search(String regex, String input) {
     List<String> list = new ArrayList<>();
-    Matcher m = Pattern.compile(regex).matcher(s);
+    Matcher m = Pattern.compile(regex).matcher(input);
     while (m.find())
       list.add(m.group(0));
     return list;
