@@ -43,7 +43,7 @@ public class Main implements ApplicationRunner {
     //###TODO finalize this
     //###TODO finalize this
     Repository repository = new FileRepositoryBuilder()
-        .setGitDir(new File(".git"))
+        // .setGitDir(new File(".git"))
          .readEnvironment() // scan environment GIT_* variables
          .findGitDir() // scan up the file system tree
         .build();
