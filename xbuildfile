@@ -1,6 +1,7 @@
 #!/bin/sh -ex
 rm -f xbuild
 rm -fR bin build
-if [ "$XBUILD" ]; then echo "version=${XBUILD_NUMBER?}" > gradle.properties; fi
+mkdir -p src/main/resources
 if [ "$XBUILD" ]; then echo "xbuild ${XBUILD_NUMBER?} ${XBUILD_BRANCH?} ${XBUILD_COMMIT?} ${XBUILD_COMMITTIME?}" > src/main/resources/banner.txt; fi
+if [ "$XBUILD" ]; then echo "version=${XBUILD_NUMBER?}" > gradle.properties; fi
 gradle bootJar
