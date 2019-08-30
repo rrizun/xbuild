@@ -1,2 +1,2 @@
 #!/bin/sh
-echo xdeploy-prod!!!
+cp xbuild $HOME
