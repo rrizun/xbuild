@@ -37,7 +37,7 @@ public class Main implements ApplicationRunner {
   @Override
 	public void run(ApplicationArguments args) throws Exception {
 
-    log("run", Lists.newArrayList(args.getSourceArgs()));
+    // log("run", Lists.newArrayList(args.getSourceArgs()));
 
     //###TODO finalize this
     //###TODO finalize this
@@ -97,7 +97,7 @@ public class Main implements ApplicationRunner {
         // yes
         ++number;
         String lastTag = Iterables.getLast(allTags.values()); // e.g., xbuild-234-master
-        log("lastTag", lastTag);
+        // log("lastTag", lastTag);
         try (ObjectReader reader = repository.newObjectReader()) {
           CanonicalTreeParser oldTreeParser = new CanonicalTreeParser();
           oldTreeParser.reset(reader, repository.resolve(lastTag + "^{tree}"));
