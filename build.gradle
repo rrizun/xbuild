@@ -40,3 +40,10 @@ bootJar {
 //configurations {
 //    all*.exclude module : 'spring-boot-starter-logging'
 //}
+
+test {
+	testLogging {
+		// events "passed", "skipped", "failed"
+	}
+	useJUnitPlatform()
+}
