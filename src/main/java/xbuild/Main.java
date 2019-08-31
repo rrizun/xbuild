@@ -1,6 +1,7 @@
 package xbuild;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
@@ -21,15 +22,70 @@ import org.springframework.context.ApplicationContext;
 
 import com.google.common.collect.*;
 
+// https://semver.org
+class Version {
+
+  private final String major;
+  private final String minor;
+  private final String patch;
+  private final String pre;
+  private final String build;
+
+  public Version(String version) throws Exception {
+    Matcher m = p.matcher(version);
+    if (m.find()) {
+      major = m.group(1);
+      minor = m.group(2);
+      patch = m.group(3);
+      pre = m.group(4);
+      build = m.group(5);
+    } else
+      throw new Exception(version);
+  }
+
+  public Version(String major, String minor, String patch) {
+    this.major = major;
+    this.minor = minor;
+    this.patch = patch;
+    this.pre = null;
+    this.build = null;
+  }
+
+  public String render() {
+    String result = String.format("%s.%s.%s", major, minor, patch);
+    if (pre!=null) {
+      result = String.format("%s-%s", result, pre);
+      if (build!=null)
+        result = String.format("%s+%s", result, build);
+    }
+    return result;
+  }
+
+  public Version incrementMajor() {
+    String major = new BigInteger(this.major).add(BigInteger.ONE).toString();
+    String minor = "0";
+    String patch = "0";
+    return new Version(major, minor, patch);
+  }
+
+  // https://semver.org
+  static final Pattern p = Pattern.compile("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?");
+}
+
 /**
  * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
  */
 @SpringBootApplication
 public class Main implements ApplicationRunner {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 //	  args = new String[] {"--tag"};
     SpringApplication.run(Main.class, args);
+
+    // System.out.println(new Version("xbuild-2.3.4-alpha+asdf-master").render());
+    // System.out.println(new Version("2.3.4-abc").render());
+    // System.out.println(new Version("2.3.4-abc+123").render());
+
   }
 	
   static {

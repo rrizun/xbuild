@@ -33,10 +33,10 @@ public class HumanComparator implements Comparator<String> {
     Matcher m = p.matcher(input);
     while (m.find()) {
       String atom = m.group(0);
-      if (atom.matches("[^0-9]+"))
-        list.add(atom);
-      else
+      if (atom.matches("[0-9]+"))
         list.add(new BigInteger(atom));
+      else
+        list.add(atom);
     }
     return list;
   }
