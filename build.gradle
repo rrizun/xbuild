@@ -25,16 +25,16 @@ dependencies {
 	testImplementation('org.junit.jupiter:junit-jupiter:+')
 }
 
+springBoot {
+	buildInfo()
+}
+
 bootJar {
 	archiveName="xbuild"
 	destinationDir = file(".")
 	launchScript {
 		script = file("custom.script")
 	}
-}
-
-springBoot {
-	buildInfo()
 }
 
 //configurations {

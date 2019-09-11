@@ -1,7 +1,6 @@
 package xbuild;
 
 import java.io.*;
-import java.math.BigInteger;
 import java.nio.file.*;
 import java.time.*;
 import java.util.*;
@@ -21,56 +20,6 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 
 import com.google.common.collect.*;
-
-// https://semver.org
-class Version {
-
-  private final String major;
-  private final String minor;
-  private final String patch;
-  private final String pre;
-  private final String build;
-
-  public Version(String version) throws Exception {
-    Matcher m = p.matcher(version);
-    if (m.find()) {
-      major = m.group(1);
-      minor = m.group(2);
-      patch = m.group(3);
-      pre = m.group(4);
-      build = m.group(5);
-    } else
-      throw new Exception(version);
-  }
-
-  public Version(String major, String minor, String patch) {
-    this.major = major;
-    this.minor = minor;
-    this.patch = patch;
-    this.pre = null;
-    this.build = null;
-  }
-
-  public String render() {
-    String result = String.format("%s.%s.%s", major, minor, patch);
-    if (pre!=null) {
-      result = String.format("%s-%s", result, pre);
-      if (build!=null)
-        result = String.format("%s+%s", result, build);
-    }
-    return result;
-  }
-
-  public Version incrementMajor() {
-    String major = new BigInteger(this.major).add(BigInteger.ONE).toString();
-    String minor = "0";
-    String patch = "0";
-    return new Version(major, minor, patch);
-  }
-
-  // https://semver.org
-  static final Pattern p = Pattern.compile("(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?");
-}
 
 /**
  * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
@@ -94,14 +43,15 @@ public class Main implements ApplicationRunner {
 
   public Main(ApplicationContext context) {
     BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-    if (buildProperties != null)
-      log("buildProperties", buildProperties);
+    if (buildProperties != null) {
+      log("version", buildProperties.getVersion());
+      for (BuildProperties.Entry entry : buildProperties)
+        log(entry.getKey(), entry.getValue());
+    }
   }
 
   @Override
 	public void run(ApplicationArguments args) throws Exception {
-
-    // log("run", Lists.newArrayList(args.getSourceArgs()));
 
     //###TODO finalize this
     //###TODO finalize this
@@ -126,8 +76,56 @@ public class Main implements ApplicationRunner {
     
     // branch
     final String branch = repository.getBranch(); // e.g., "master"
+
+    for (Ref ref : repository.getRefDatabase().getRefsByPrefix("refs/remotes/origin/master"))
+      log(ref);
     
     try (Git git = new Git(repository)) {
+
+                          // List<RevCommit> revCommits = Lists.newArrayList(git.log().all().call());
+
+                          // revCommits.sort(new Comparator<RevCommit>() {
+                          //   @Override
+                          //   public int compare(RevCommit o1, RevCommit o2) {
+                          //     return o1.getCommitTime() - o2.getCommitTime();
+                          //   }
+                          // });
+                          
+                          // int major = 0;
+                          // int minor = 9;
+                          // int patch = 0;
+                          // int build = 0;
+
+                          // try (RevWalk revWalk = new RevWalk( repository )) {
+                            
+                          //   Ref ref = repository.getRefDatabase().findRef("refs/remotes/origin/master");
+                            
+                          //   revWalk.markStart( revWalk.parseCommit( ref.getObjectId() ));
+
+                          //   for (RevCommit commit : revWalk) {
+                          //     log(Instant.ofEpochSecond(commit.getCommitTime()).toString(), commit.getShortMessage());
+
+                          //     ++build;
+                          //     String message = commit.getShortMessage();
+                          //     if (message.contains("+major")) {
+                          //       ++major;
+                          //       minor = 0;
+                          //       patch = 0;
+                          //     }
+                          //     if (message.contains("+minor")) {
+                          //       ++minor;
+                          //       patch = 0;
+                          //     }
+                          //     if (message.contains("+patch"))
+                          //       ++patch;
+                          //   }
+                            
+                          // }
+                          
+                          // String version = String.format("xbuild-%s.%s.%s-%s+%s", major, minor, patch, branch, build);
+                          // log("version", version);
+                          
+                          // System.exit(0);
 
       // rev=remote/branch
       // if script then rev=latest
@@ -144,7 +142,6 @@ public class Main implements ApplicationRunner {
 
       // get latest buildNumber
       Map<Integer, String> allTags = Maps.newTreeMap();
-      Map<String, Integer> tagToNumber = Maps.newTreeMap();
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
         // e.g., xbuild-234-master
         if (ref.getName().contains("xbuild")) {
@@ -190,9 +187,9 @@ public class Main implements ApplicationRunner {
       Map<String, String> env = Maps.newTreeMap();
       env.put("XBUILD", "1"); // "xbuild is running" signal
       env.put("XBUILD_BRANCH", branch);
-      env.put("XBUILD_NUMBER", ""+number);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
       env.put("XBUILD_COMMITTIME", commitTime);
+      env.put("XBUILD_NUMBER", ""+number);
       
       log(env);
 
@@ -201,6 +198,7 @@ public class Main implements ApplicationRunner {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
       log("git archive", commit.abbreviate(7).name());
+      
       git.archive()
         .setFormat("tar")
         .setOutputStream(baos)
@@ -216,12 +214,12 @@ public class Main implements ApplicationRunner {
       
       // invoke xbuildfile
       if (new File("xbuildfile").exists())
-        run(tmpDir, env, "./xbuildfile");
+        Posix.run(tmpDir, env, "./xbuildfile");
       else if (new File(".xbuild").exists()) // legacy
-        run(tmpDir, env, "./.xbuild");
+        Posix.run(tmpDir, env, "./.xbuild");
 
       // % xbuild ?
-      if (args.getNonOptionArgs().size()==0) {
+      if (args.containsOption("build")) {
         String tag = String.format("xbuild-%s-%s", number, branch);
         // git tag
         log("git tag", tag);
@@ -235,7 +233,7 @@ public class Main implements ApplicationRunner {
       // run deploy script, e.g., xdeploy-dev
       for (String arg : args.getNonOptionArgs()) {
         if (new File(arg).exists())
-          run(tmpDir, env, String.format("./%s", arg));
+          Posix.run(tmpDir, env, String.format("./%s", arg));
       }
 
     }
@@ -249,7 +247,7 @@ public class Main implements ApplicationRunner {
 	 * @throws Exception
 	 */
   private void untar(InputStream in, Path outputPath) throws Exception {
-    TarArchiveEntry entry = null;
+    TarArchiveEntry entry;
     TarArchiveInputStream tar = new TarArchiveInputStream(in);
     while ((entry = tar.getNextTarEntry()) != null) {
       Path entryPath = outputPath.resolve(entry.getName());
@@ -262,29 +260,6 @@ public class Main implements ApplicationRunner {
       }
     }
   }
-
-	/**
-	 * run
-	 * 
-	 * @param cwd
-	 * @param env
-	 * @param command
-	 * @throws Exception
-	 */
-	private void run(Path cwd, Map<String, String> env, String... command) throws Exception {
-		log("----------------------------------------------------------------------");
-		log("run", Lists.newArrayList(command));
-		log("----------------------------------------------------------------------");
-
-		ProcessBuilder builder = new ProcessBuilder(command);
-		  builder.directory(cwd.toFile());
-			builder.environment().putAll(env);
-			builder.redirectError(ProcessBuilder.Redirect.INHERIT);
-			builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-
-		if (builder.start().waitFor() != 0)
-			throw new Exception(cwd.toString()+env.toString()+command.toString());
-	}
 
 	/**
 	 * search
