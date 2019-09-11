@@ -1,11 +1,16 @@
 #!/bin/sh -ex
 rm -f xbuild
 rm -fR bin build
-if [ "$XBUILD" ]; then
-  echo "version=${XBUILD_NUMBER?}" > gradle.properties
-  echo "xbuild.number=${XBUILD_NUMBER?}" >> gradle.properties
-  echo "xbuild.branch=${XBUILD_BRANCH?}" >> gradle.properties
-  echo "xbuild.commit=${XBUILD_COMMIT?}" >> gradle.properties
-  echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> gradle.properties
+if [ "${XBUILD}" ]; then
+  # write gradle.properties
+  version="0.9.${XBUILD_NUMBER?}"
+  echo "version=${version?}" > gradle.properties
+  # write proprietary xbuild.properties
+  buildpropertiesfile=src/main/resources/xbuild.properties
+  echo "version=${version?}" > ${buildpropertiesfile?}
+  echo "xbuild.number=${XBUILD_NUMBER?}" >> ${buildpropertiesfile?}
+  echo "xbuild.branch=${XBUILD_BRANCH?}" >> ${buildpropertiesfile?}
+  echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${buildpropertiesfile?}
+  echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${buildpropertiesfile?}
 fi
 gradle bootJar
