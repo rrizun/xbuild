@@ -44,7 +44,6 @@ public class Main implements ApplicationRunner {
   public Main(ApplicationContext context) {
     BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
     if (buildProperties != null) {
-      log("version", buildProperties.getVersion());
       for (BuildProperties.Entry entry : buildProperties)
         log(entry.getKey(), entry.getValue());
     }
