@@ -8,6 +8,4 @@ if [ "$XBUILD" ]; then
   echo "xbuild.commit=${XBUILD_COMMIT?}" >> gradle.properties
   echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> gradle.properties
 fi
-mkdir -p src/main/resources
-if [ "$XBUILD" ]; then echo "xbuild ${XBUILD_NUMBER?} ${XBUILD_BRANCH?} ${XBUILD_COMMIT?} ${XBUILD_COMMITTIME?}" >> src/main/resources/banner.txt; fi
 gradle bootJar
