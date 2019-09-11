@@ -143,10 +143,10 @@ public class Main implements ApplicationRunner {
       // get latest buildNumber
       Map<Integer, String> allTags = Maps.newTreeMap();
       for (Ref ref : repository.getRefDatabase().getRefsByPrefix(Constants.R_TAGS)) {
-        // e.g., xbuild-234-master
-        if (ref.getName().contains("xbuild")) {
+        String refName = ref.getName(); // e.g., refs/tags/xbuild-234-master
+        if (refName.contains("xbuild")) {
           // extract num from ref
-          int num = Integer.parseInt(search("[0-9]+", ref.getName()).iterator().next());
+          int num = Integer.parseInt(search("[0-9]+", refName).iterator().next());
           allTags.put(num, ref.getName());
         }
       }
