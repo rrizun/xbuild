@@ -219,7 +219,7 @@ public class Main implements ApplicationRunner {
         Posix.run(tmpDir, env, "./.xbuild");
 
       // % xbuild ?
-      if (args.containsOption("build")) {
+      if (args.getNonOptionArgs().size() == 0) {
         String tag = String.format("xbuild-%s-%s", number, branch);
         // git tag
         log("git tag", tag);
