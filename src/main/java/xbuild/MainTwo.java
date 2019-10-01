@@ -30,6 +30,7 @@ import com.google.common.collect.*;
 public class MainTwo implements ApplicationRunner {
 
 	public static void main(String[] args) throws Exception {
+    // args = new String[]{"git@github.com:rrizun/xbuild-java.git"};
     SpringApplication.run(MainTwo.class, args);
   }
 	
@@ -77,6 +78,7 @@ public class MainTwo implements ApplicationRunner {
         .setGitDir(gitDir(args)) // --git-dir if supplied, no-op if null
         .readEnvironment() // scan environment GIT_* variables
         .findGitDir() // scan up the file system tree
+        .setBare()
         .build();
     return new Git(repository);
   }
@@ -99,11 +101,11 @@ public class MainTwo implements ApplicationRunner {
       final String branch = repo.getBranch(); // e.g., "master"
       log("branch", branch);
   
-      String revision = String.format("%s/%s", remote, branch);
+      String revision = String.format("refs/remotes/%s/%s", remote, branch);
   
       List<RevCommit> commitList = Lists.newArrayList();
       try (RevWalk walk = new RevWalk(repo)) {
-        RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
+        RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
         while (head != null) {
           count++;
           commitList.add(head);
@@ -219,23 +221,8 @@ public class MainTwo implements ApplicationRunner {
     }
   }
 
-	/**
-	 * search
-	 * 
-	 * @param regex
-	 * @param input
-	 * @return
-	 */
-  private List<String> search(String regex, String input) {
-    List<String> list = new ArrayList<>();
-    Matcher m = Pattern.compile(regex).matcher(input);
-    while (m.find())
-      list.add(m.group(0));
-    return list;
-  }
-
-	static void log(Object... args) {
-		new LogHelper(Main.class).log(args);
+	private void log(Object... args) {
+		new LogHelper(this).log(args);
 	}
 
 }
