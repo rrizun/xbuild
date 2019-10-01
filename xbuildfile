@@ -2,14 +2,13 @@
 rm -f xbuild
 rm -fR bin build
 if [ "${XBUILD}" ]; then
-  version="0.9-${XBUILD_BRANCH}-${XBUILD_NUMBER?}-${XBUILD_COMMIT?}"
   # write gradle.properties
-  echo "version=${version?}" > gradle.properties
+  echo "version=${XBUILD?}" > gradle.properties
   # write banner.txt
-  cowsay "${version?}" > src/main/resources/banner.txt
+  cowsay "${XBUILD?}" > src/main/resources/banner.txt
   # write proprietary xbuild.properties
   buildpropertiesfile="src/main/resources/xbuild.properties"
-  echo "version=${version?}" > ${buildpropertiesfile?}
+  echo "xbuild=${XBUILD?}" > ${buildpropertiesfile?}
   echo "xbuild.branch=${XBUILD_BRANCH?}" >> ${buildpropertiesfile?}
   echo "xbuild.number=${XBUILD_NUMBER?}" >> ${buildpropertiesfile?}
   echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${buildpropertiesfile?}
