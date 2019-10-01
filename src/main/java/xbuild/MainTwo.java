@@ -58,9 +58,11 @@ public class MainTwo implements ApplicationRunner {
 
   private Git createGit(ApplicationArguments args) throws Exception {
 
-    // try to infer git url
+    // try to infer git url, e.g.,
+    // git@github.com:torvalds/linux.git
+    // https://github.com/torvalds/linux.git
     for (String arg : args.getNonOptionArgs()) {
-      if (arg.contains("@")) {
+      if (arg.contains(":")) {
         Path tempDirectory = Files.createTempDirectory("xbuild");
         log(tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
