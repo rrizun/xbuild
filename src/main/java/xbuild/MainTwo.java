@@ -104,6 +104,9 @@ public class MainTwo implements ApplicationRunner {
       String revision = String.format("refs/remotes/%s/%s", remote, branch);
   
       List<RevCommit> commitList = Lists.newArrayList();
+
+      // git rev-list master --count --first-parent
+      // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
       try (RevWalk walk = new RevWalk(repo)) {
         RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
         while (head != null) {
