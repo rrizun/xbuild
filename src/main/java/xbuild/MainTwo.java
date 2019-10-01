@@ -18,6 +18,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.archive.ArchiveFormats;
+import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -38,11 +39,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class MainTwo implements ApplicationRunner {
 
-	public static void main(String[] args) throws Exception {
+  public static void main(String[] args) throws Exception {
     // args = new String[]{"git@github.com:rrizun/xbuild-java.git"};
     SpringApplication.run(MainTwo.class, args);
   }
-	
+
   static {
     ArchiveFormats.registerAll();
   }
@@ -73,11 +74,30 @@ public class MainTwo implements ApplicationRunner {
     for (String arg : args.getNonOptionArgs()) {
       if (arg.contains(":")) {
         Path tempDirectory = Files.createTempDirectory("xbuild");
-        log(tempDirectory);
+        // log("cloneRepository", tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
             // .setBare(true)
             .setDirectory(tempDirectory.toFile())
-            .setURI(args.getNonOptionArgs().iterator().next())
+            .setURI(arg)
+            .setProgressMonitor(new ProgressMonitor(){
+              @Override
+              public void start(int totalTasks) {
+              }
+              @Override
+              public void beginTask(String title, int totalWork) {
+                log(title, totalWork);
+              }
+              @Override
+              public void update(int completed) {
+              }
+              @Override
+              public void endTask() {
+              }
+              @Override
+              public boolean isCancelled() {
+                return false;
+              }
+            })
         // .setURI("/home/rrizun/git/ground-service-old")
         // .setURI("git@github.com:rrizun/xbuild-java.git")
         ;
@@ -196,14 +216,14 @@ public class MainTwo implements ApplicationRunner {
       untar(in, tmpDir);
       
       // invoke xbuildfile
-      if (new File("xbuildfile").exists())
+      if (new File(tmpDir.toFile(), "xbuildfile").exists())
         Posix.run(tmpDir, env, "./xbuildfile");
-      else if (new File(".xbuild").exists())
+      else if (new File(tmpDir.toFile(), ".xbuild").exists())
         Posix.run(tmpDir, env, "./.xbuild"); // legacy
 
       // run deploy script, e.g., xdeploy-dev
       for (String arg : args.getNonOptionArgs()) {
-        File file = new File(arg);
+        File file = new File(tmpDir.toFile(), arg);
         if (file.exists()) {
           if (file.isFile())
             Posix.run(tmpDir, env, String.format("./%s", arg));
