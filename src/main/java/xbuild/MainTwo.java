@@ -86,7 +86,6 @@ public class MainTwo implements ApplicationRunner {
   @Override
 	public void run(ApplicationArguments args) throws Exception {
     try (Git git = createGit(args)) {
-      int count = 0;
       Repository repo = git.getRepository();
   
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
@@ -103,15 +102,15 @@ public class MainTwo implements ApplicationRunner {
   
       String revision = String.format("refs/remotes/%s/%s", remote, branch);
   
-      List<RevCommit> commitList = Lists.newArrayList();
+      Map<Integer, RevCommit> commits = Maps.newTreeMap();
 
       // git rev-list master --count --first-parent
       // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
       try (RevWalk walk = new RevWalk(repo)) {
+        int count = 0;
         RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
         while (head != null) {
-          count++;
-          commitList.add(head);
+          commits.put(count++, head);
           RevCommit[] parents = head.getParents();
           if (parents != null && parents.length > 0) {
             head = walk.parseCommit(parents[0]);
@@ -121,11 +120,8 @@ public class MainTwo implements ApplicationRunner {
         }
       }
   
-      Map<Integer, RevCommit> commits = Maps.newTreeMap();
-      for (RevCommit commit : commitList) {
-  
-        commits.put(count--, commit);
-  
+      // for (RevCommit commit : commitList)
+      {
         // String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
         // log(name);
         // Ref ref = repo.findRef(name);
@@ -137,14 +133,15 @@ public class MainTwo implements ApplicationRunner {
       }
   
         // commit number
-        int number = Iterables.getLast(commits.keySet());
-        RevCommit commit = Iterables.getLast(commits.values());
+        int number = commits.size() - commits.keySet().iterator().next();
+        RevCommit commit = commits.get(commits.size() - number);
+        // RevCommit commit = Iterables.getLast(commits.values());
   
       // % xbuild number ?
       for (String arg : args.getNonOptionArgs()) {
         if (arg.matches("[0-9]+")) {
           number = Integer.parseInt(arg);
-          commit = Objects.requireNonNull(commits.get(number), "bad commit number");
+          commit = Objects.requireNonNull(commits.get(commits.size() - number), "bad commit number");
         }
       }
   
