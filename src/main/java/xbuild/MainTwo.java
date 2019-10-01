@@ -1,30 +1,39 @@
 package xbuild;
 
-import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import org.apache.commons.compress.archivers.tar.*;
-import org.eclipse.jgit.api.*;
-import org.eclipse.jgit.archive.*;
-import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription;
-import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.revwalk.*;
-import org.eclipse.jgit.storage.file.*;
-import org.eclipse.jgit.transport.RefSpec;
-import org.eclipse.jgit.treewalk.*;
-import org.springframework.boot.*;
-import org.springframework.boot.autoconfigure.*;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
+import com.google.common.collect.Maps;
 
-import com.google.common.collect.*;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.eclipse.jgit.api.CloneCommand;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.archive.ArchiveFormats;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
+ * 
+ * if arg is a git url then it is interpreted as the git url
+ * if arg is a number then it is interpreted as the build number
+ * if arg is a file then it is interpreted as the deploy script
+ * if arg is a commitish then it is interpreted as the build commit
  */
 @SpringBootApplication
 public class MainTwo implements ApplicationRunner {
