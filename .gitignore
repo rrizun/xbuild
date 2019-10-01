@@ -1,7 +1,6 @@
+bin/
+build/
 .classpath
 .gradle
 .project
 .vscode
-bin
-build
-xbuild
