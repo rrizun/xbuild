@@ -103,7 +103,7 @@ public class MainTwo implements ApplicationRunner {
   
       List<RevCommit> commitList = Lists.newArrayList();
       try (RevWalk walk = new RevWalk(repo)) {
-        RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
+        RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
         while (head != null) {
           count++;
           commitList.add(head);
