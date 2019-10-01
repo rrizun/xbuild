@@ -46,57 +46,72 @@ public class MainTwo implements ApplicationRunner {
   // }
 
   private File gitDir(ApplicationArguments args) {
-    for (String gitDir : args.getOptionValues("git-dir"))
-      return new File(gitDir);
+    List<String> values = args.getOptionValues("git-dir");
+    if (values != null) {
+      for (String value : values)
+        return new File(value);
+    }
     return null;
+  }
+
+  private Git createGit(ApplicationArguments args) throws Exception {
+
+    // try to infer git url
+    for (String arg : args.getNonOptionArgs()) {
+      if (arg.contains("@")) {
+        File directory = Files.createTempDirectory("xbuild").toFile();
+        log(directory);
+        CloneCommand cloneCommand = Git.cloneRepository()
+            .setBare(true)
+            .setDirectory(directory)
+            .setURI(args.getNonOptionArgs().iterator().next())
+        // .setURI("/home/rrizun/git/ground-service-old")
+        // .setURI("git@github.com:rrizun/xbuild-java.git")
+        ;
+        return cloneCommand.call();
+      }
+    }
+
+    // try to infer local git dir
+    Repository repository = new FileRepositoryBuilder()
+        .setGitDir(gitDir(args)) // --git-dir if supplied, no-op if null
+        .readEnvironment() // scan environment GIT_* variables
+        .findGitDir() // scan up the file system tree
+        .build();
+    return new Git(repository);
   }
 
   @Override
 	public void run(ApplicationArguments args) throws Exception {
-
-    if (args.getNonOptionArgs().size()==0) {
-
-      Repository repository = new FileRepositoryBuilder()
-          .setGitDir(gitDir(args)) // --git-dir if supplied, no-op if null
-          .readEnvironment() // scan environment GIT_* variables
-          .findGitDir() // scan up the file system tree
-          .build();
-
-      try (Git git = new Git(repository)) {
-        doit(git);
-      }
-
-    } else {
-
-      File directory = Files.createTempDirectory("xbuild").toFile();
-      log(directory);
-
-      CloneCommand cloneCommand = Git.cloneRepository()
-      .setBare(true)
-      .setDirectory(directory)
-      .setURI(args.getNonOptionArgs().iterator().next())
-      // .setURI("/home/rrizun/git/ground-service-old")
-      // .setURI("git@github.com:rrizun/xbuild-java.git")
-      ;
-
-      try (Git git = cloneCommand.call()) {
-        doit(git);
-      }
-  
+    try (Git git = createGit(args)) {
+      doit(args, git);
     }
-
-
   }
   
-  private void doit(Git git) throws Exception {
-    Repository repo = git.getRepository();
+  private void doit(ApplicationArguments args, Git git) throws Exception {
     int count = 0;
+    Repository repo = git.getRepository();
+
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    // remote
+    final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
+    log("remote", remote);
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+    final String branch = repo.getBranch(); // e.g., "master"
+    log("branch", branch);
+
+    String revision = String.format("%s/%s", remote, branch);
+
     List<RevCommit> commitList = Lists.newArrayList();
     try (RevWalk walk = new RevWalk(repo)) {
       RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
       while (head != null) {
-        commitList.add(head);
         count++;
+        commitList.add(head);
         RevCommit[] parents = head.getParents();
         if (parents != null && parents.length > 0) {
           head = walk.parseCommit(parents[0]);
@@ -106,18 +121,36 @@ public class MainTwo implements ApplicationRunner {
       }
     }
 
+    Map<Integer, RevCommit> commits = Maps.newTreeMap();
     for (RevCommit commit : commitList) {
-      String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
-      log(name);
-      Ref ref = repo.findRef(name);
-      if (ref==null) {
-        // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call()); // annotated
-        // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call()); // not annotated
-      }
-      --count;
 
-      break;
+      commits.put(count--, commit);
+
+      // String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
+      // log(name);
+      // Ref ref = repo.findRef(name);
+      // if (ref==null) {
+      //   // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call()); // annotated
+      //   // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call()); // not annotated
+      // }
+      // --count;
     }
+
+      // commit number
+      int number = Iterables.getLast(commits.keySet());
+      RevCommit commit = Iterables.getLast(commits.values());
+
+    // % xbuild number ?
+    for (String arg : args.getNonOptionArgs()) {
+      if (arg.matches("[0-9]+")) {
+        number = Integer.parseInt(arg);
+        commit = Objects.requireNonNull(commits.get(number), "bad commit number");
+      }
+    }
+
+    log("number", number);
+    log("commit", commit);
+    
 
 }
 
