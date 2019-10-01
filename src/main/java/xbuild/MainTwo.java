@@ -84,76 +84,70 @@ public class MainTwo implements ApplicationRunner {
   @Override
 	public void run(ApplicationArguments args) throws Exception {
     try (Git git = createGit(args)) {
-      doit(args, git);
+      int count = 0;
+      Repository repo = git.getRepository();
+  
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // remote
+      final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
+      log("remote", remote);
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      final String branch = repo.getBranch(); // e.g., "master"
+      log("branch", branch);
+  
+      String revision = String.format("%s/%s", remote, branch);
+  
+      List<RevCommit> commitList = Lists.newArrayList();
+      try (RevWalk walk = new RevWalk(repo)) {
+        RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
+        while (head != null) {
+          count++;
+          commitList.add(head);
+          RevCommit[] parents = head.getParents();
+          if (parents != null && parents.length > 0) {
+            head = walk.parseCommit(parents[0]);
+          } else {
+            head = null;
+          }
+        }
+      }
+  
+      Map<Integer, RevCommit> commits = Maps.newTreeMap();
+      for (RevCommit commit : commitList) {
+  
+        commits.put(count--, commit);
+  
+        // String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
+        // log(name);
+        // Ref ref = repo.findRef(name);
+        // if (ref==null) {
+        //   // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call()); // annotated
+        //   // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call()); // not annotated
+        // }
+        // --count;
+      }
+  
+        // commit number
+        int number = Iterables.getLast(commits.keySet());
+        RevCommit commit = Iterables.getLast(commits.values());
+  
+      // % xbuild number ?
+      for (String arg : args.getNonOptionArgs()) {
+        if (arg.matches("[0-9]+")) {
+          number = Integer.parseInt(arg);
+          commit = Objects.requireNonNull(commits.get(number), "bad commit number");
+        }
+      }
+  
+      log("number", number);
+      log("commit", commit);
     }
   }
   
-  private void doit(ApplicationArguments args, Git git) throws Exception {
-    int count = 0;
-    Repository repo = git.getRepository();
-
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    // remote
-    final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
-    log("remote", remote);
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-    final String branch = repo.getBranch(); // e.g., "master"
-    log("branch", branch);
-
-    String revision = String.format("%s/%s", remote, branch);
-
-    List<RevCommit> commitList = Lists.newArrayList();
-    try (RevWalk walk = new RevWalk(repo)) {
-      RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
-      while (head != null) {
-        count++;
-        commitList.add(head);
-        RevCommit[] parents = head.getParents();
-        if (parents != null && parents.length > 0) {
-          head = walk.parseCommit(parents[0]);
-        } else {
-          head = null;
-        }
-      }
-    }
-
-    Map<Integer, RevCommit> commits = Maps.newTreeMap();
-    for (RevCommit commit : commitList) {
-
-      commits.put(count--, commit);
-
-      // String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
-      // log(name);
-      // Ref ref = repo.findRef(name);
-      // if (ref==null) {
-      //   // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call()); // annotated
-      //   // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call()); // not annotated
-      // }
-      // --count;
-    }
-
-      // commit number
-      int number = Iterables.getLast(commits.keySet());
-      RevCommit commit = Iterables.getLast(commits.values());
-
-    // % xbuild number ?
-    for (String arg : args.getNonOptionArgs()) {
-      if (arg.matches("[0-9]+")) {
-        number = Integer.parseInt(arg);
-        commit = Objects.requireNonNull(commits.get(number), "bad commit number");
-      }
-    }
-
-    log("number", number);
-    log("commit", commit);
-    
-
-}
-
   /**
 	 * untar
 	 * 
