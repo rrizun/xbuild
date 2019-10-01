@@ -38,13 +38,14 @@ public class MainTwo implements ApplicationRunner {
     ArchiveFormats.registerAll();
   }
 
-  // public MainTwo(ApplicationContext context) {
-  //   BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-  //   if (buildProperties != null) {
-  //     for (BuildProperties.Entry entry : buildProperties)
-  //       log(entry.getKey(), entry.getValue());
-  //   }
-  // }
+  public MainTwo(ApplicationContext context) {
+    BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+    if (buildProperties != null) {
+      log("version", buildProperties.getVersion());
+      // for (BuildProperties.Entry entry : buildProperties)
+      //   log(entry.getKey(), entry.getValue());
+    }
+  }
 
   private File gitDir(ApplicationArguments args) {
     List<String> values = args.getOptionValues("git-dir");
