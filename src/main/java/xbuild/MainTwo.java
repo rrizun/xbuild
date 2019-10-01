@@ -63,7 +63,7 @@ public class MainTwo implements ApplicationRunner {
         Path tempDirectory = Files.createTempDirectory("xbuild");
         log(tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
-            .setBare(true)
+            // .setBare(true)
             .setDirectory(tempDirectory.toFile())
             .setURI(args.getNonOptionArgs().iterator().next())
         // .setURI("/home/rrizun/git/ground-service-old")
@@ -78,7 +78,7 @@ public class MainTwo implements ApplicationRunner {
         .setGitDir(gitDir(args)) // --git-dir if supplied, no-op if null
         .readEnvironment() // scan environment GIT_* variables
         .findGitDir() // scan up the file system tree
-        .setBare()
+        // .setBare()
         .build();
     return new Git(repository);
   }
@@ -105,7 +105,7 @@ public class MainTwo implements ApplicationRunner {
   
       List<RevCommit> commitList = Lists.newArrayList();
       try (RevWalk walk = new RevWalk(repo)) {
-        RevCommit head = walk.parseCommit(repo.findRef("HEAD").getObjectId());
+        RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
         while (head != null) {
           count++;
           commitList.add(head);
