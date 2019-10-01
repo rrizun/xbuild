@@ -24,17 +24,11 @@ import com.google.common.collect.*;
 /**
  * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
  */
-@SpringBootApplication
+// @SpringBootApplication
 public class Main implements ApplicationRunner {
 
 	public static void main(String[] args) throws Exception {
-//	  args = new String[] {"--tag"};
     SpringApplication.run(Main.class, args);
-
-    // System.out.println(new Version("xbuild-2.3.4-alpha+asdf-master").render());
-    // System.out.println(new Version("2.3.4-abc").render());
-    // System.out.println(new Version("2.3.4-abc+123").render());
-
   }
 	
   static {
@@ -146,13 +140,13 @@ public class Main implements ApplicationRunner {
         if (refName.contains("xbuild")) {
           // extract num from ref
           int num = Integer.parseInt(search("[0-9]+", refName).iterator().next());
-          allTags.put(num, ref.getName());
+          allTags.put(num, refName);
         }
       }
       if (allTags.size()>0)
-        number = Iterables.getLast(allTags.keySet());
+        number = Iterables.getLast(allTags.keySet()); // most recent build number
       
-      // % xbuild ?
+      // are we creating a new tag?
       if (args.getNonOptionArgs().size() == 0) {
         // yes
         ++number;
@@ -184,7 +178,7 @@ public class Main implements ApplicationRunner {
       String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
       Map<String, String> env = Maps.newTreeMap();
-      env.put("XBUILD", "1"); // "xbuild is running" signal
+      env.put("XBUILD", "1"); // "xbuild is running"
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
       env.put("XBUILD_COMMITTIME", commitTime);
