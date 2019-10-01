@@ -155,14 +155,12 @@ public class MainTwo implements ApplicationRunner {
             env.put("XBUILD_BRANCH", branch);
             env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
             env.put("XBUILD_COMMITTIME", commitTime);
+            env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
             env.put("XBUILD_NUMBER", ""+number);
             
             log(env);
 
-
-
-
-                  // archive
+      // archive
       
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       
