@@ -59,11 +59,11 @@ public class MainTwo implements ApplicationRunner {
     // try to infer git url
     for (String arg : args.getNonOptionArgs()) {
       if (arg.contains("@")) {
-        File directory = Files.createTempDirectory("xbuild").toFile();
-        log(directory);
+        Path tempDirectory = Files.createTempDirectory("xbuild");
+        log(tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
             .setBare(true)
-            .setDirectory(directory)
+            .setDirectory(tempDirectory.toFile())
             .setURI(args.getNonOptionArgs().iterator().next())
         // .setURI("/home/rrizun/git/ground-service-old")
         // .setURI("git@github.com:rrizun/xbuild-java.git")
@@ -145,6 +145,57 @@ public class MainTwo implements ApplicationRunner {
   
       log("number", number);
       log("commit", commit);
+
+
+            // timestamp
+            String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
+
+            Map<String, String> env = Maps.newTreeMap();
+            env.put("XBUILD", "1"); // "xbuild is running"
+            env.put("XBUILD_BRANCH", branch);
+            env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
+            env.put("XBUILD_COMMITTIME", commitTime);
+            env.put("XBUILD_NUMBER", ""+number);
+            
+            log(env);
+
+
+
+
+                  // archive
+      
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      
+      log("git archive", commit.abbreviate(7).name());
+      
+      git.archive()
+        .setFormat("tar")
+        .setOutputStream(baos)
+        .setTree(commit)
+        .call();
+      
+      Path tmpDir = Files.createTempDirectory("xbuild");
+      log(tmpDir);
+      
+      ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+      
+      untar(in, tmpDir);
+      
+      // invoke xbuildfile
+      if (new File("xbuildfile").exists())
+        Posix.run(tmpDir, env, "./xbuildfile");
+      else if (new File(".xbuild").exists())
+        Posix.run(tmpDir, env, "./.xbuild"); // legacy
+
+      // run deploy script, e.g., xdeploy-dev
+      for (String arg : args.getNonOptionArgs()) {
+        File file = new File(arg);
+        if (file.exists()) {
+          if (file.isFile())
+            Posix.run(tmpDir, env, String.format("./%s", arg));
+        }
+      }
+      
     }
   }
   
