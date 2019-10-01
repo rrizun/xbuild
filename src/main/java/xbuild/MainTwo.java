@@ -165,12 +165,14 @@ public class MainTwo implements ApplicationRunner {
             String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
             Map<String, String> env = Maps.newTreeMap();
-            env.put("XBUILD", "1"); // "xbuild is running"
+
+            String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+            env.put("XBUILD", xbuild); // "xbuild is running"
             env.put("XBUILD_BRANCH", branch);
+            env.put("XBUILD_NUMBER", ""+number);
             env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
             env.put("XBUILD_COMMITTIME", commitTime);
             env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
-            env.put("XBUILD_NUMBER", ""+number);
             
             log(env);
 
