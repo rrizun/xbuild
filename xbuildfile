@@ -3,7 +3,7 @@ rm -f xbuild
 rm -fR bin build
 if [ "${XBUILD}" ]; then
   # write gradle.properties
-  version="0.9.${XBUILD_BRANCH}-${XBUILD_NUMBER?}-${XBUILD_COMMIT?}"
+  version="0.9-${XBUILD_BRANCH}-${XBUILD_NUMBER?}-${XBUILD_COMMIT?}"
   echo "version=${version?}" > gradle.properties
   # write proprietary xbuild.properties
   buildpropertiesfile="src/main/resources/xbuild.properties"
