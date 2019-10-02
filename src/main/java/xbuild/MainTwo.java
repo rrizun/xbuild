@@ -128,6 +128,28 @@ public class MainTwo implements ApplicationRunner {
     return new Git(repository);
   }
 
+  // git rev-list master --count --first-parent
+  // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
+  private BiMap<Integer, RevCommit> countFirstParent(Repository repo, String branch) throws Exception {
+    BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
+
+    try (RevWalk walk = new RevWalk(repo)) {
+      int count = -1;
+      String revision = String.format("refs/heads/%s", branch);
+      RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
+      while (head != null) {
+        ++count;
+        numberToCommit.put(count, head);
+        RevCommit[] parents = head.getParents();
+        head = null;
+        if (parents != null && parents.length > 0)
+          head = walk.parseCommit(parents[0]);
+      }
+    }
+
+    return fix(numberToCommit);
+  }
+
   private boolean verbose;
 
   @Override
@@ -150,16 +172,18 @@ public class MainTwo implements ApplicationRunner {
         Repository repo = git.getRepository();
   
         String branch = repo.getBranch(); // e.g., "master"
+        BiMap<Integer, RevCommit> numberToCommit = countFirstParent(repo, branch);
         int number = 0;
         RevCommit commit = null;
         List<String> scripts = Lists.newArrayList();
-  
+
         for (String arg : args.getNonOptionArgs()) {
           // is it a branch?
           Ref ref = repo.findRef(arg);
           if (ref != null) {
             log("branch", arg);
             branch = arg;
+            numberToCommit = countFirstParent(repo, branch);
           } else {
             // is it a commit?
             ObjectId objectId = null;
@@ -174,10 +198,6 @@ public class MainTwo implements ApplicationRunner {
             if (objectId != null) {
               log("commit", arg);
               commit = repo.parseCommit(objectId);
-              // // number = numberToCommit.inverse().get(commit);
-              // String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-              // System.out.println(xbuild);
-              // exit();
             } else {
               // is it a number?
               if (arg.matches("[0-9]+")) {
@@ -201,27 +221,24 @@ public class MainTwo implements ApplicationRunner {
         // if (!repo.isBare())
         // revision = String.format("refs/remotes/%s/%s", remote, branch);
   
-        BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
   
-        // git rev-list master --count --first-parent
-        // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
-        try (RevWalk walk = new RevWalk(repo)) {
-          int count = -1;
-          String revision = String.format("refs/heads/%s", branch);
-          RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
-          while (head != null) {
-            ++count;
-            numberToCommit.put(count, head);
-            RevCommit[] parents = head.getParents();
-            if (parents != null && parents.length > 0) {
-              head = walk.parseCommit(parents[0]);
-            } else {
-              head = null;
-            }
-          }
-        }
-  
-        numberToCommit = fix(numberToCommit);
+                  // // git rev-list master --count --first-parent
+                  // // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
+                  // try (RevWalk walk = new RevWalk(repo)) {
+                  //   int count = -1;
+                  //   String revision = String.format("refs/heads/%s", branch);
+                  //   RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
+                  //   while (head != null) {
+                  //     ++count;
+                  //     numberToCommit.put(count, head);
+                  //     RevCommit[] parents = head.getParents();
+                  //     head = null;
+                  //     if (parents != null && parents.length > 0)
+                  //       head = walk.parseCommit(parents[0]);
+                  //   }
+                  // }
+            
+                  // numberToCommit = fix(numberToCommit);
   
         // for (RevCommit commit : commitList)
         {
