@@ -238,7 +238,7 @@ public class Main implements ApplicationRunner {
         env.put("XBUILD", xbuild); // "xbuild is running"
         env.put("XBUILD_BRANCH", branch);
         env.put("XBUILD_NUMBER", "" + number);
-        env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
+        env.put("XBUILD_COMMIT", commit.name());
         env.put("XBUILD_COMMITTIME", commitTime);
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
   
