@@ -184,6 +184,9 @@ public class MainTwo implements ApplicationRunner {
             log("branch", arg);
             branch = arg;
             numberToCommit = countFirstParent(repo, branch);
+            number = 0;
+            commit = null;
+            scripts.clear();
           } else {
             // is it a commit?
             ObjectId objectId = null;
