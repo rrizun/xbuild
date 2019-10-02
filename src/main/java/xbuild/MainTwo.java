@@ -126,7 +126,8 @@ public class MainTwo implements ApplicationRunner {
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       // remote
-      final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
+      final String remote = "origin"; // e.g., "origin"
+      // final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
       log("remote", remote);
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
