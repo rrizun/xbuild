@@ -132,7 +132,13 @@ public class MainTwo implements ApplicationRunner {
       final String branch = repo.getBranch(); // e.g., "master"
       log("branch", branch);
   
-      String revision = String.format("refs/remotes/%s/%s", remote, branch);
+      // refs/remotes/origin/master
+      // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
+      // not bare: 514dc7579c43e673bdf613e01690371438661260 refs/remotes/origin/master
+
+      String revision = String.format("refs/heads/%s", branch);
+      if (!repo.isBare())
+        revision = String.format("refs/remotes/%s/%s", remote, branch);
   
       Map<Integer, RevCommit> commits = Maps.newTreeMap();
 
