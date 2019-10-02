@@ -2,8 +2,8 @@
 if [ "${XBUILD}" ]; then
   # write gradle.properties
   echo "version=${XBUILD?}" > gradle.properties
-  # write banner.txt
-  cowsay "${XBUILD?}" > src/main/resources/banner.txt
+  # # write banner.txt
+  # cowsay "${XBUILD?}" > src/main/resources/banner.txt
   # write proprietary xbuild.properties
   xbuildpropertiesfile="src/main/resources/xbuild.properties"
   echo "xbuild=${XBUILD?}" > ${xbuildpropertiesfile?}
