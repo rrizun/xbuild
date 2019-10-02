@@ -46,11 +46,11 @@ import org.springframework.context.ApplicationContext;
  * if arg is a file then it is interpreted as the deploy script
  */
 @SpringBootApplication // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
-public class MainTwo implements ApplicationRunner {
+public class Main implements ApplicationRunner {
 
   public static void main(String[] args) throws Exception {
     // args = new String[]{"git@github.com:rrizun/xbuild-java.git"};
-    SpringApplication.run(MainTwo.class, args);
+    SpringApplication.run(Main.class, args);
   }
 
   static {
@@ -59,7 +59,7 @@ public class MainTwo implements ApplicationRunner {
 
   private final ApplicationContext context;
 
-  public MainTwo(ApplicationContext context) {
+  public Main(ApplicationContext context) {
     this.context = context;
     // BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
     // if (buildProperties != null) {
