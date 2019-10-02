@@ -61,12 +61,12 @@ public class MainTwo implements ApplicationRunner {
 
   public MainTwo(ApplicationContext context) {
     this.context = context;
-    BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-    if (buildProperties != null) {
-      log("xbuild", buildProperties.getVersion());
-      // for (BuildProperties.Entry entry : buildProperties)
-      //   log(entry.getKey(), entry.getValue());
-    }
+    // BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+    // if (buildProperties != null) {
+    //   log("xbuild", buildProperties.getVersion());
+    //   // for (BuildProperties.Entry entry : buildProperties)
+    //   //   log(entry.getKey(), entry.getValue());
+    // }
 }
 
   private File getGitDir(ApplicationArguments args) {
@@ -232,6 +232,9 @@ public class MainTwo implements ApplicationRunner {
         Map<String, String> env = Maps.newTreeMap();
   
         String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+
+        System.out.println(xbuild);
+  
         env.put("XBUILD", xbuild); // "xbuild is running"
         env.put("XBUILD_BRANCH", branch);
         env.put("XBUILD_NUMBER", "" + number);
@@ -240,7 +243,7 @@ public class MainTwo implements ApplicationRunner {
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
   
         log(env);
-  
+
         if (scripts.size()>0) {
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
   
