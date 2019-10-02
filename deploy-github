@@ -1,7 +1,9 @@
 #!/bin/sh -ex
-curl -v http://localhost/foo -d @- << EOF
+
+#cat << EOF
+curl -v -H"Authorization: Token ${GITHUB_TOKEN?}" https://api.github.com/repos/rrizun/xbuild-java/releases -d @- << EOF
 {
   "tag_name": "${XBUILD}",
-  "target_commitish": "${XBUILD_COMMIT}",
+  "target_commitish": "${XBUILD_COMMIT}"
 }
 EOF
