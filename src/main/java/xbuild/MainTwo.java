@@ -29,6 +29,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 
 /**
  * xbuild
@@ -51,14 +52,17 @@ public class MainTwo implements ApplicationRunner {
     ArchiveFormats.registerAll();
   }
 
-  // public MainTwo(ApplicationContext context) {
+  private final ApplicationContext context;
+
+  public MainTwo(ApplicationContext context) {
+    this.context = context;
   //   BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
   //   if (buildProperties != null) {
   //     log("version", buildProperties.getVersion());
   //     // for (BuildProperties.Entry entry : buildProperties)
   //     //   log(entry.getKey(), entry.getValue());
   //   }
-  // }
+  }
 
   private File getGitDir(ApplicationArguments args) {
     List<String> values = args.getOptionValues("git-dir");
@@ -193,12 +197,13 @@ public class MainTwo implements ApplicationRunner {
           commit = Objects.requireNonNull(commits.get(commits.size() - number), "bad commit number");
         }
       }
-  
+
+      // query branch+commit?
       for (String arg : args.getNonOptionArgs()) {
         ObjectId objectId = repo.resolve(arg);
         if (objectId!=null) {
           System.out.println(objectId);
-          System.exit(0);
+          System.exit(SpringApplication.exit(context, ()->0));
         }
       }
 
