@@ -324,7 +324,8 @@ public class MainTwo implements ApplicationRunner {
   // }
 
 	private void log(Object... args) {
-		new LogHelper(this).log(args);
+    if (verbose)
+  		new LogHelper(this).log(args);
 	}
 
 }
