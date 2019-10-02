@@ -30,14 +30,15 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
+ * xbuild
  * 
- * if arg is a git url then it is interpreted as the git url
+ * if arg is a url then it is interpreted as the remote git url
+ * if arg is a branch then it is interpreted as the build branch
  * if arg is a number then it is interpreted as the build number
+ * if arg is a commit then it is interpreted as the build commit
  * if arg is a file then it is interpreted as the deploy script
- * if arg is a commitish then it is interpreted as the build commit
  */
-@SpringBootApplication
+@SpringBootApplication // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
 public class MainTwo implements ApplicationRunner {
 
   public static void main(String[] args) throws Exception {
@@ -58,7 +59,7 @@ public class MainTwo implements ApplicationRunner {
   //   }
   // }
 
-  private File gitDir(ApplicationArguments args) {
+  private File getGitDir(ApplicationArguments args) {
     List<String> values = args.getOptionValues("git-dir");
     if (values != null) {
       for (String value : values)
@@ -108,7 +109,7 @@ public class MainTwo implements ApplicationRunner {
 
     // try to infer local git dir
     Repository repository = new FileRepositoryBuilder()
-        .setGitDir(gitDir(args)) // --git-dir if supplied, no-op if null
+        .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
         .readEnvironment() // scan environment GIT_* variables
         .findGitDir() // scan up the file system tree
         // .setBare()
