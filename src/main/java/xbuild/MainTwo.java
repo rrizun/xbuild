@@ -139,12 +139,6 @@ public class MainTwo implements ApplicationRunner {
         Ref ref = repo.findRef(arg);
         if (ref!=null)
           branch = arg;
-
-          ObjectId objectId = repo.resolve(arg);
-          if (objectId!=null) {
-            System.out.println(objectId);
-            System.exit(0);
-          }
       }
 
       log("branch", branch);
@@ -218,6 +212,14 @@ public class MainTwo implements ApplicationRunner {
             env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
             
             log(env);
+
+      for (String arg : args.getNonOptionArgs()) {
+        ObjectId objectId = repo.resolve(arg);
+        if (objectId!=null) {
+          System.out.println(objectId);
+          System.exit(0);
+        }
+      }
 
       // archive
       
