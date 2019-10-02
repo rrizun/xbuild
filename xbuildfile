@@ -7,11 +7,11 @@ if [ "${XBUILD}" ]; then
   # write banner.txt
   cowsay "${XBUILD?}" > src/main/resources/banner.txt
   # write proprietary xbuild.properties
-  buildpropertiesfile="src/main/resources/xbuild.properties"
-  echo "xbuild=${XBUILD?}" > ${buildpropertiesfile?}
-  echo "xbuild.branch=${XBUILD_BRANCH?}" >> ${buildpropertiesfile?}
-  echo "xbuild.number=${XBUILD_NUMBER?}" >> ${buildpropertiesfile?}
-  echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${buildpropertiesfile?}
-  echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${buildpropertiesfile?}
+  xbuildpropertiesfile="src/main/resources/xbuild.properties"
+  echo "xbuild=${XBUILD?}" > ${xbuildpropertiesfile?}
+  echo "xbuild.branch=${XBUILD_BRANCH?}" >> ${xbuildpropertiesfile?}
+  echo "xbuild.number=${XBUILD_NUMBER?}" >> ${xbuildpropertiesfile?}
+  echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${xbuildpropertiesfile?}
+  echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${xbuildpropertiesfile?}
 fi
 gradle bootJar
