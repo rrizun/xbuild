@@ -217,49 +217,6 @@ public class MainTwo implements ApplicationRunner {
           }
         }
   
-        // refs/remotes/origin/master
-        // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
-        // not bare: 514dc7579c43e673bdf613e01690371438661260 refs/remotes/origin/master
-  
-        // if (!repo.isBare())
-        // revision = String.format("refs/remotes/%s/%s", remote, branch);
-  
-  
-                  // // git rev-list master --count --first-parent
-                  // // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
-                  // try (RevWalk walk = new RevWalk(repo)) {
-                  //   int count = -1;
-                  //   String revision = String.format("refs/heads/%s", branch);
-                  //   RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
-                  //   while (head != null) {
-                  //     ++count;
-                  //     numberToCommit.put(count, head);
-                  //     RevCommit[] parents = head.getParents();
-                  //     head = null;
-                  //     if (parents != null && parents.length > 0)
-                  //       head = walk.parseCommit(parents[0]);
-                  //   }
-                  // }
-            
-                  // numberToCommit = fix(numberToCommit);
-  
-        // for (RevCommit commit : commitList)
-        {
-          // String name = String.format("%s-%s-%s", "master", count,
-          // commit.abbreviate(7).name());
-          // log(name);
-          // Ref ref = repo.findRef(name);
-          // if (ref==null) {
-          // //
-          // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call());
-          // // annotated
-          // //
-          // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call());
-          // // not annotated
-          // }
-          // --count;
-        }
-  
         // latest commit number
         if (number != 0)
           commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
@@ -270,31 +227,7 @@ public class MainTwo implements ApplicationRunner {
           commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
         }
   
-        // // % xbuild number ?
-        // for (String arg : args.getNonOptionArgs()) {
-        //   if (arg.matches("[0-9]+")) {
-        //     number = Integer.parseInt(arg);
-        //     commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
-        //   }
-        // }
-  
-        // // query branch+commit?
-        // // for (String arg : args.getNonOptionArgs())
-        // {
-        //   ObjectId objectId = repo.resolve(arg);
-        //   if (objectId != null) {
-        //     commit = repo.parseCommit(objectId);
-        //     number = numberToCommit.inverse().get(commit);
-            // String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-            // System.out.println(xbuild);
-        //     exit();
-        //   }
-        // }
-  
-        // log("number", number);
-        // log("commit", commit);
-  
-        // timestamp
+        // commitTime
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
   
         Map<String, String> env = Maps.newTreeMap();
