@@ -62,12 +62,12 @@ public class MainTwo implements ApplicationRunner {
 
   public MainTwo(ApplicationContext context) {
     this.context = context;
-  //   BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-  //   if (buildProperties != null) {
-  //     log("version", buildProperties.getVersion());
-  //     // for (BuildProperties.Entry entry : buildProperties)
-  //     //   log(entry.getKey(), entry.getValue());
-  //   }
+    BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+    if (buildProperties != null) {
+      log("xbuild", buildProperties.getVersion());
+      // for (BuildProperties.Entry entry : buildProperties)
+      //   log(entry.getKey(), entry.getValue());
+    }
 }
 
   private File getGitDir(ApplicationArguments args) {
