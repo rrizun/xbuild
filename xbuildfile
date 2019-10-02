@@ -1,5 +1,4 @@
 #!/bin/sh -ex
-rm -fR bin build xbuild
 if [ "${XBUILD}" ]; then
   # write gradle.properties
   echo "version=${XBUILD?}" > gradle.properties
