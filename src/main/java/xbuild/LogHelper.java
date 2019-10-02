@@ -21,6 +21,6 @@ public class LogHelper {
 //    parts.add(object);
     for (Object arg : args)
       parts.add(arg);
-    System.out.println(Joiner.on(" ").useForNull("null").join(parts));
+    System.err.println(Joiner.on(" ").useForNull("null").join(parts));
   }
 }
