@@ -18,6 +18,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.archive.ArchiveFormats;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
@@ -138,6 +139,12 @@ public class MainTwo implements ApplicationRunner {
         Ref ref = repo.findRef(arg);
         if (ref!=null)
           branch = arg;
+
+          ObjectId objectId = repo.resolve(arg);
+          if (objectId!=null) {
+            System.out.println(objectId);
+            System.exit(0);
+          }
       }
 
       log("branch", branch);
