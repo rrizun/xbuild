@@ -14,6 +14,7 @@ import java.util.Objects;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -138,160 +139,188 @@ public class MainTwo implements ApplicationRunner {
         // log(entry.getKey(), entry.getValue());
       }
       log(version);
-      exit();
-    }
+    } else {
 
-    try (Git git = createGit(args)) {
-      Repository repo = git.getRepository();
-
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // // remote
-      // final String remote = "origin"; // e.g., "origin"
-      // // final String remote = repo.getRemoteNames().iterator().next(); // e.g.,
-      // "origin"
-      // // log("remote", remote);
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-
-      String branch = repo.getBranch(); // e.g., "master"
-
-      for (String arg : args.getNonOptionArgs()) {
-        Ref ref = repo.findRef(arg);
-        if (ref != null)
-          branch = arg;
-      }
-
-      // log("branch", branch);
-
-      // refs/remotes/origin/master
-      // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
-      // not bare: 514dc7579c43e673bdf613e01690371438661260 refs/remotes/origin/master
-
-      String revision = String.format("refs/heads/%s", branch);
-      // if (!repo.isBare())
-      // revision = String.format("refs/remotes/%s/%s", remote, branch);
-
-      BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
-
-      // git rev-list master --count --first-parent
-      // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
-      try (RevWalk walk = new RevWalk(repo)) {
-        int count = -1;
-        RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
-        while (head != null) {
-          ++count;
-          numberToCommit.put(count, head);
-          // commitToNumber.put(head, count);
-          RevCommit[] parents = head.getParents();
-          if (parents != null && parents.length > 0) {
-            head = walk.parseCommit(parents[0]);
+      try (Git git = createGit(args)) {
+        Repository repo = git.getRepository();
+  
+        String branch = repo.getBranch(); // e.g., "master"
+        int number = 0;
+        RevCommit commit = null;
+        List<String> scripts = Lists.newArrayList();
+  
+        for (String arg : args.getNonOptionArgs()) {
+          // is it a branch?
+          Ref ref = repo.findRef(arg);
+          if (ref != null) {
+            log("branch", arg);
+            branch = arg;
           } else {
-            head = null;
+            // is it a commit?
+            ObjectId objectId = null;
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            if (arg.length()>=7)
+              objectId = repo.resolve(arg);
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+            if (objectId != null) {
+              log("commit", arg);
+              commit = repo.parseCommit(objectId);
+              // // number = numberToCommit.inverse().get(commit);
+              // String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+              // System.out.println(xbuild);
+              // exit();
+            } else {
+              // is it a number?
+              if (arg.matches("[0-9]+")) {
+                log("number", arg);
+                number = Integer.parseInt(arg);
+                // commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit
+                // number");
+              } else {
+                // is it a script?
+                log("script", arg);
+                scripts.add(arg);
+              }
+            }
+          }
+        }
+  
+        // refs/remotes/origin/master
+        // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
+        // not bare: 514dc7579c43e673bdf613e01690371438661260 refs/remotes/origin/master
+  
+        // if (!repo.isBare())
+        // revision = String.format("refs/remotes/%s/%s", remote, branch);
+  
+        BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
+  
+        // git rev-list master --count --first-parent
+        // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
+        try (RevWalk walk = new RevWalk(repo)) {
+          int count = -1;
+          String revision = String.format("refs/heads/%s", branch);
+          RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
+          while (head != null) {
+            ++count;
+            numberToCommit.put(count, head);
+            RevCommit[] parents = head.getParents();
+            if (parents != null && parents.length > 0) {
+              head = walk.parseCommit(parents[0]);
+            } else {
+              head = null;
+            }
+          }
+        }
+  
+        numberToCommit = fix(numberToCommit);
+  
+        // for (RevCommit commit : commitList)
+        {
+          // String name = String.format("%s-%s-%s", "master", count,
+          // commit.abbreviate(7).name());
+          // log(name);
+          // Ref ref = repo.findRef(name);
+          // if (ref==null) {
+          // //
+          // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call());
+          // // annotated
+          // //
+          // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call());
+          // // not annotated
+          // }
+          // --count;
+        }
+  
+        // latest commit number
+        if (number != 0)
+          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
+        else if (commit != null)
+          number = numberToCommit.inverse().get(commit);
+        else {
+          number = Iterables.getLast(Sets.newTreeSet(numberToCommit.keySet()));
+          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
+        }
+  
+        // // % xbuild number ?
+        // for (String arg : args.getNonOptionArgs()) {
+        //   if (arg.matches("[0-9]+")) {
+        //     number = Integer.parseInt(arg);
+        //     commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
+        //   }
+        // }
+  
+        // // query branch+commit?
+        // // for (String arg : args.getNonOptionArgs())
+        // {
+        //   ObjectId objectId = repo.resolve(arg);
+        //   if (objectId != null) {
+        //     commit = repo.parseCommit(objectId);
+        //     number = numberToCommit.inverse().get(commit);
+            // String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+            // System.out.println(xbuild);
+        //     exit();
+        //   }
+        // }
+  
+        // log("number", number);
+        // log("commit", commit);
+  
+        // timestamp
+        String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
+  
+        Map<String, String> env = Maps.newTreeMap();
+  
+        String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+        env.put("XBUILD", xbuild); // "xbuild is running"
+        env.put("XBUILD_BRANCH", branch);
+        env.put("XBUILD_NUMBER", "" + number);
+        env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
+        env.put("XBUILD_COMMITTIME", commitTime);
+        env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
+  
+        log(env);
+  
+        if (args.getOptionNames().contains("build")) {
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  
+          log("git archive", commit.abbreviate(7).name());
+    
+          git.archive()
+            .setFormat("tar")
+            .setOutputStream(baos)
+            .setTree(commit)
+            .call();
+    
+          Path tmpDir = Files.createTempDirectory("xbuild");
+          log(tmpDir);
+    
+          ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+    
+          untar(in, tmpDir);
+    
+          // invoke xbuildfile
+          if (new File(tmpDir.toFile(), "xbuildfile").exists())
+            Posix.run(tmpDir, env, "./xbuildfile");
+          else if (new File(tmpDir.toFile(), ".xbuild").exists())
+            Posix.run(tmpDir, env, "./.xbuild"); // legacy
+    
+          // run deploy script, e.g., xdeploy-dev
+          for (String script : scripts) {
+            File file = new File(tmpDir.toFile(), script);
+            if (file.exists()) {
+              if (file.isFile())
+                Posix.run(tmpDir, env, String.format("./%s", script));
+            }
           }
         }
       }
-
-      numberToCommit = fix(numberToCommit);
-
-      // for (RevCommit commit : commitList)
-      {
-        // String name = String.format("%s-%s-%s", "master", count,
-        // commit.abbreviate(7).name());
-        // log(name);
-        // Ref ref = repo.findRef(name);
-        // if (ref==null) {
-        // //
-        // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call());
-        // // annotated
-        // //
-        // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call());
-        // // not annotated
-        // }
-        // --count;
-      }
-
-      // commit number
-      int number = Iterables.getLast(Sets.newTreeSet(numberToCommit.keySet()));
-      // int number = numberToCommit.size() - numberToCommit.keySet().iterator().next();
-      RevCommit commit = numberToCommit.get(number);
-      // RevCommit commit = Iterables.getLast(commits.values());
-
-      // % xbuild number ?
-      for (String arg : args.getNonOptionArgs()) {
-        if (arg.matches("[0-9]+")) {
-          number = Integer.parseInt(arg);
-          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
-        }
-      }
-
-      // query branch+commit?
-      for (String arg : args.getNonOptionArgs()) {
-        ObjectId objectId = repo.resolve(arg);
-        if (objectId != null) {
-          commit = repo.parseCommit(objectId);
-          number = numberToCommit.inverse().get(commit);
-          String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-          System.out.println(xbuild);
-          exit();
-        }
-      }
-
-      // log("number", number);
-      // log("commit", commit);
-
-      // timestamp
-      String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
-
-      Map<String, String> env = Maps.newTreeMap();
-
-      String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-      env.put("XBUILD", xbuild); // "xbuild is running"
-      env.put("XBUILD_BRANCH", branch);
-      env.put("XBUILD_NUMBER", "" + number);
-      env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
-      env.put("XBUILD_COMMITTIME", commitTime);
-      env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
-
-      log(env);
-
-      // archive
-
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-      log("git archive", commit.abbreviate(7).name());
-
-      git.archive()
-        .setFormat("tar")
-        .setOutputStream(baos)
-        .setTree(commit)
-        .call();
-
-      Path tmpDir = Files.createTempDirectory("xbuild");
-      log(tmpDir);
-
-      ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
-
-      untar(in, tmpDir);
-
-      // invoke xbuildfile
-      if (new File(tmpDir.toFile(), "xbuildfile").exists())
-        Posix.run(tmpDir, env, "./xbuildfile");
-      else if (new File(tmpDir.toFile(), ".xbuild").exists())
-        Posix.run(tmpDir, env, "./.xbuild"); // legacy
-
-      // run deploy script, e.g., xdeploy-dev
-      for (String arg : args.getNonOptionArgs()) {
-        File file = new File(tmpDir.toFile(), arg);
-        if (file.exists()) {
-          if (file.isFile())
-            Posix.run(tmpDir, env, String.format("./%s", arg));
-        }
-      }
-
+  
     }
+
   }
 
   private BiMap<Integer, RevCommit> fix(BiMap<Integer, RevCommit> input) {
