@@ -23,8 +23,7 @@ public class Posix {
     ProcessBuilder builder = new ProcessBuilder(command);
       builder.directory(cwd.toFile());
       builder.environment().putAll(env);
-      builder.redirectError(ProcessBuilder.Redirect.INHERIT);
-      builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+      builder.inheritIO();
 
     if (builder.start().waitFor() != 0)
       throw new Exception(cwd.toString()+env.toString()+command.toString());
