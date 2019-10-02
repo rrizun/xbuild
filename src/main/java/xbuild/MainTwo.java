@@ -309,7 +309,7 @@ public class MainTwo implements ApplicationRunner {
   
         log(env);
   
-        if (args.getOptionNames().contains("build")) {
+        if (scripts.size()>0) {
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
   
           log("git archive", commit.abbreviate(7).name());
