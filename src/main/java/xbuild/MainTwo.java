@@ -164,7 +164,7 @@ public class MainTwo implements ApplicationRunner {
         // for (BuildProperties.Entry entry : buildProperties)
         // log(entry.getKey(), entry.getValue());
       }
-      log(version);
+      System.out.println(version);
     } else {
 
       try (Git git = createGit(args)) {
