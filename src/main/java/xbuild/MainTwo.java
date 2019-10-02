@@ -374,9 +374,9 @@ public class MainTwo implements ApplicationRunner {
     }
   }
 
-  private void exit() {
-    System.exit(SpringApplication.exit(context, ()->0));
-  }
+  // private void exit() {
+  //   System.exit(SpringApplication.exit(context, ()->0));
+  // }
 
 	private void log(Object... args) {
 		new LogHelper(this).log(args);
