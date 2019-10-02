@@ -25,17 +25,17 @@ import com.google.common.collect.*;
  * https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
  */
 // @SpringBootApplication
-public class Main implements ApplicationRunner {
+public class OldMain implements ApplicationRunner {
 
 	public static void main(String[] args) throws Exception {
-    SpringApplication.run(Main.class, args);
+    SpringApplication.run(OldMain.class, args);
   }
 	
   static {
     ArchiveFormats.registerAll();
   }
 
-  public Main(ApplicationContext context) {
+  public OldMain(ApplicationContext context) {
     BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
     if (buildProperties != null) {
       for (BuildProperties.Entry entry : buildProperties)
@@ -270,7 +270,7 @@ public class Main implements ApplicationRunner {
   }
 
 	private void log(Object... args) {
-		new LogHelper(Main.class).log(args);
+		new LogHelper(this).log(args);
 	}
 
 }
