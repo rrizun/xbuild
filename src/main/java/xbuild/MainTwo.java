@@ -10,13 +10,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -130,8 +129,8 @@ public class MainTwo implements ApplicationRunner {
 
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
-  private BiMap<Integer, RevCommit> countFirstParent(Repository repo, String branch) throws Exception {
-    BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
+  private BiMap<String, RevCommit> countFirstParent(Repository repo, String branch) throws Exception {
+    BiMap<String, RevCommit> numberToCommit = HashBiMap.create();
 
     try (RevWalk walk = new RevWalk(repo)) {
       int count = -1;
@@ -139,7 +138,7 @@ public class MainTwo implements ApplicationRunner {
       RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
       while (head != null) {
         ++count;
-        numberToCommit.put(count, head);
+        numberToCommit.put(""+count, head);
         RevCommit[] parents = head.getParents();
         head = null;
         if (parents != null && parents.length > 0)
@@ -172,8 +171,8 @@ public class MainTwo implements ApplicationRunner {
         Repository repo = git.getRepository();
   
         String branch = repo.getBranch(); // e.g., "master"
-        BiMap<Integer, RevCommit> numberToCommit = countFirstParent(repo, branch);
-        int number = 0;
+        BiMap<String, RevCommit> numberToCommit = countFirstParent(repo, branch);
+        String number = null;
         RevCommit commit = null;
         List<String> scripts = Lists.newArrayList();
 
@@ -184,30 +183,30 @@ public class MainTwo implements ApplicationRunner {
             log("branch", arg);
             branch = arg;
             numberToCommit = countFirstParent(repo, branch);
-            number = 0;
+            number = null;
             commit = null;
             scripts.clear();
           } else {
-            // is it a commit?
-            ObjectId objectId = null;
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            if (arg.length()>=7)
-              objectId = repo.resolve(arg);
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-            if (objectId != null) {
-              log("commit", arg);
-              commit = repo.parseCommit(objectId);
+
+            // is it a xbuild number?
+            if (numberToCommit.containsKey(arg)) {
+              log("number", arg);
+              number = arg;
             } else {
-              // is it a number?
-              if (arg.matches("[0-9]+")) {
-                log("number", arg);
-                number = Integer.parseInt(arg);
-                // commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit
-                // number");
+
+              // is it a commit?
+              ObjectId objectId = null;
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              if (arg.length()>=7)
+                objectId = repo.resolve(arg);
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              if (objectId != null) {
+                log("commit", arg);
+                commit = repo.parseCommit(objectId);
               } else {
                 // is it a script?
                 log("script", arg);
@@ -218,12 +217,12 @@ public class MainTwo implements ApplicationRunner {
         }
   
         // latest commit number
-        if (number != 0)
+        if (number != null)
           commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
         else if (commit != null)
           number = numberToCommit.inverse().get(commit);
         else {
-          number = Iterables.getLast(Sets.newTreeSet(numberToCommit.keySet()));
+          number = latest(numberToCommit.keySet());
           commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
         }
   
@@ -281,13 +280,20 @@ public class MainTwo implements ApplicationRunner {
 
   }
 
-  private BiMap<Integer, RevCommit> reverse(BiMap<Integer, RevCommit> input) {
-    BiMap<Integer, RevCommit> output = HashBiMap.create();;
-    for (Map.Entry<Integer, RevCommit> entry : input.entrySet())
-      output.put(input.size()-entry.getKey(), entry.getValue());
-    return output;
+  private String latest(Set<String> numbers) {
+    int number = 0;
+    for (String s : numbers)
+      number = Math.max(number, Integer.parseInt(s));
+    return ""+number;
   }
   
+  private BiMap<String, RevCommit> reverse(BiMap<String, RevCommit> input) {
+    BiMap<String, RevCommit> output = HashBiMap.create();;
+    for (Map.Entry<String, RevCommit> entry : input.entrySet())
+      output.put(""+(input.size()-Integer.parseInt(entry.getKey())), entry.getValue());
+    return output;
+  }
+
   /**
 	 * untar
 	 * 
