@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -63,7 +67,7 @@ public class MainTwo implements ApplicationRunner {
   //     // for (BuildProperties.Entry entry : buildProperties)
   //     //   log(entry.getKey(), entry.getValue());
   //   }
-  }
+}
 
   private File getGitDir(ApplicationArguments args) {
     List<String> values = args.getOptionValues("git-dir");
@@ -124,7 +128,7 @@ public class MainTwo implements ApplicationRunner {
   }
 
   @Override
-	public void run(ApplicationArguments args) throws Exception {
+  public void run(ApplicationArguments args) throws Exception {
     if (args.getOptionNames().contains("version")) {
       String version = "version";
       BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
@@ -136,16 +140,17 @@ public class MainTwo implements ApplicationRunner {
       log(version);
       exit();
     }
-    
+
     try (Git git = createGit(args)) {
       Repository repo = git.getRepository();
-  
+
       // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       // // remote
       // final String remote = "origin"; // e.g., "origin"
-      // // final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
+      // // final String remote = repo.getRemoteNames().iterator().next(); // e.g.,
+      // "origin"
       // // log("remote", remote);
       // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
@@ -155,7 +160,7 @@ public class MainTwo implements ApplicationRunner {
 
       for (String arg : args.getNonOptionArgs()) {
         Ref ref = repo.findRef(arg);
-        if (ref!=null)
+        if (ref != null)
           branch = arg;
       }
 
@@ -167,10 +172,9 @@ public class MainTwo implements ApplicationRunner {
 
       String revision = String.format("refs/heads/%s", branch);
       // if (!repo.isBare())
-      //   revision = String.format("refs/remotes/%s/%s", remote, branch);
-  
-      Map<Integer, RevCommit> numberToCommit = Maps.newTreeMap();
-      Map<RevCommit, Integer> commitToNumber = Maps.newTreeMap();
+      // revision = String.format("refs/remotes/%s/%s", remote, branch);
+
+      BiMap<Integer, RevCommit> numberToCommit = HashBiMap.create();
 
       // git rev-list master --count --first-parent
       // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
@@ -180,7 +184,7 @@ public class MainTwo implements ApplicationRunner {
         while (head != null) {
           ++count;
           numberToCommit.put(count, head);
-          commitToNumber.put(head, count);
+          // commitToNumber.put(head, count);
           RevCommit[] parents = head.getParents();
           if (parents != null && parents.length > 0) {
             head = walk.parseCommit(parents[0]);
@@ -189,38 +193,46 @@ public class MainTwo implements ApplicationRunner {
           }
         }
       }
-  
+
+      numberToCommit = fix(numberToCommit);
+
       // for (RevCommit commit : commitList)
       {
-        // String name = String.format("%s-%s-%s", "master", count, commit.abbreviate(7).name());
+        // String name = String.format("%s-%s-%s", "master", count,
+        // commit.abbreviate(7).name());
         // log(name);
         // Ref ref = repo.findRef(name);
         // if (ref==null) {
-        //   // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call()); // annotated
-        //   // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call()); // not annotated
+        // //
+        // log(git.tag().setName(name).setObjectId(commit).setForceUpdate(true).call());
+        // // annotated
+        // //
+        // log(git.tag().setName(name).setObjectId(commit).setAnnotated(false).setForceUpdate(true).call());
+        // // not annotated
         // }
         // --count;
       }
-  
-        // commit number
-        int number = numberToCommit.size() - numberToCommit.keySet().iterator().next();
-        RevCommit commit = numberToCommit.get(numberToCommit.size() - number);
-        // RevCommit commit = Iterables.getLast(commits.values());
-  
+
+      // commit number
+      int number = Iterables.getLast(Sets.newTreeSet(numberToCommit.keySet()));
+      // int number = numberToCommit.size() - numberToCommit.keySet().iterator().next();
+      RevCommit commit = numberToCommit.get(number);
+      // RevCommit commit = Iterables.getLast(commits.values());
+
       // % xbuild number ?
       for (String arg : args.getNonOptionArgs()) {
         if (arg.matches("[0-9]+")) {
           number = Integer.parseInt(arg);
-          commit = Objects.requireNonNull(numberToCommit.get(numberToCommit.size() - number), "bad commit number");
+          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
         }
       }
 
       // query branch+commit?
       for (String arg : args.getNonOptionArgs()) {
         ObjectId objectId = repo.resolve(arg);
-        if (objectId!=null) {
+        if (objectId != null) {
           commit = repo.parseCommit(objectId);
-          number = numberToCommit.size() - commitToNumber.get(commit);
+          number = numberToCommit.inverse().get(commit);
           String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
           System.out.println(xbuild);
           exit();
@@ -230,40 +242,40 @@ public class MainTwo implements ApplicationRunner {
       // log("number", number);
       // log("commit", commit);
 
-            // timestamp
-            String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
+      // timestamp
+      String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
-            Map<String, String> env = Maps.newTreeMap();
+      Map<String, String> env = Maps.newTreeMap();
 
-            String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-            env.put("XBUILD", xbuild); // "xbuild is running"
-            env.put("XBUILD_BRANCH", branch);
-            env.put("XBUILD_NUMBER", ""+number);
-            env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
-            env.put("XBUILD_COMMITTIME", commitTime);
-            env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
-            
-            log(env);
+      String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+      env.put("XBUILD", xbuild); // "xbuild is running"
+      env.put("XBUILD_BRANCH", branch);
+      env.put("XBUILD_NUMBER", "" + number);
+      env.put("XBUILD_COMMIT", commit.abbreviate(7).name());
+      env.put("XBUILD_COMMITTIME", commitTime);
+      env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
+
+      log(env);
 
       // archive
-      
+
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      
+
       log("git archive", commit.abbreviate(7).name());
-      
+
       git.archive()
         .setFormat("tar")
         .setOutputStream(baos)
         .setTree(commit)
         .call();
-      
+
       Path tmpDir = Files.createTempDirectory("xbuild");
       log(tmpDir);
-      
+
       ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
-      
+
       untar(in, tmpDir);
-      
+
       // invoke xbuildfile
       if (new File(tmpDir.toFile(), "xbuildfile").exists())
         Posix.run(tmpDir, env, "./xbuildfile");
@@ -278,8 +290,15 @@ public class MainTwo implements ApplicationRunner {
             Posix.run(tmpDir, env, String.format("./%s", arg));
         }
       }
-      
+
     }
+  }
+
+  private BiMap<Integer, RevCommit> fix(BiMap<Integer, RevCommit> input) {
+    BiMap<Integer, RevCommit> output = HashBiMap.create();;
+    for (Map.Entry<Integer, RevCommit> entry : input.entrySet())
+      output.put(input.size()-entry.getKey(), entry.getValue());
+    return output;
   }
   
   /**
