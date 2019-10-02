@@ -29,6 +29,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -124,19 +125,32 @@ public class MainTwo implements ApplicationRunner {
 
   @Override
 	public void run(ApplicationArguments args) throws Exception {
+    if (args.getOptionNames().contains("version")) {
+      String version = "version";
+      BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+      if (buildProperties != null) {
+        version = buildProperties.getVersion();
+        // for (BuildProperties.Entry entry : buildProperties)
+        // log(entry.getKey(), entry.getValue());
+      }
+      log(version);
+      exit();
+    }
+    
     try (Git git = createGit(args)) {
       Repository repo = git.getRepository();
   
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      // remote
-      final String remote = "origin"; // e.g., "origin"
-      // final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
-      // log("remote", remote);
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // // remote
+      // final String remote = "origin"; // e.g., "origin"
+      // // final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
+      // // log("remote", remote);
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+      // //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
+
       String branch = repo.getBranch(); // e.g., "master"
 
       for (String arg : args.getNonOptionArgs()) {
@@ -282,6 +296,10 @@ public class MainTwo implements ApplicationRunner {
         Files.setPosixFilePermissions(entryPath, Posix.perms(entry.getMode()));
       }
     }
+  }
+
+  private void exit() {
+    System.exit(SpringApplication.exit(context, ()->0));
   }
 
 	private void log(Object... args) {
