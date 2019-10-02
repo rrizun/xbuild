@@ -76,7 +76,7 @@ public class MainTwo implements ApplicationRunner {
         Path tempDirectory = Files.createTempDirectory("xbuild");
         // log("cloneRepository", tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
-            // .setBare(true)
+            .setBare(true)
             .setDirectory(tempDirectory.toFile())
             .setURI(arg)
             .setProgressMonitor(new ProgressMonitor(){
