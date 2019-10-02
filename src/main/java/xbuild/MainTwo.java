@@ -129,7 +129,7 @@ public class MainTwo implements ApplicationRunner {
       // remote
       final String remote = "origin"; // e.g., "origin"
       // final String remote = repo.getRemoteNames().iterator().next(); // e.g., "origin"
-      log("remote", remote);
+      // log("remote", remote);
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
@@ -141,7 +141,7 @@ public class MainTwo implements ApplicationRunner {
           branch = arg;
       }
 
-      log("branch", branch);
+      // log("branch", branch);
 
       // refs/remotes/origin/master
       // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
@@ -194,9 +194,16 @@ public class MainTwo implements ApplicationRunner {
         }
       }
   
-      log("number", number);
-      log("commit", commit);
+      for (String arg : args.getNonOptionArgs()) {
+        ObjectId objectId = repo.resolve(arg);
+        if (objectId!=null) {
+          System.out.println(objectId);
+          System.exit(0);
+        }
+      }
 
+      // log("number", number);
+      // log("commit", commit);
 
             // timestamp
             String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
@@ -212,14 +219,6 @@ public class MainTwo implements ApplicationRunner {
             env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
             
             log(env);
-
-      for (String arg : args.getNonOptionArgs()) {
-        ObjectId objectId = repo.resolve(arg);
-        if (objectId!=null) {
-          System.out.println(objectId);
-          System.exit(0);
-        }
-      }
 
       // archive
       
