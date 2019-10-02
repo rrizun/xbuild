@@ -147,7 +147,7 @@ public class MainTwo implements ApplicationRunner {
       }
     }
 
-    return fix(numberToCommit);
+    return reverse(numberToCommit);
   }
 
   private boolean verbose;
@@ -345,7 +345,7 @@ public class MainTwo implements ApplicationRunner {
 
   }
 
-  private BiMap<Integer, RevCommit> fix(BiMap<Integer, RevCommit> input) {
+  private BiMap<Integer, RevCommit> reverse(BiMap<Integer, RevCommit> input) {
     BiMap<Integer, RevCommit> output = HashBiMap.create();;
     for (Map.Entry<Integer, RevCommit> entry : input.entrySet())
       output.put(input.size()-entry.getKey(), entry.getValue());
