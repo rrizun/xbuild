@@ -19,6 +19,7 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.archive.ArchiveFormats;
 import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -74,7 +75,7 @@ public class MainTwo implements ApplicationRunner {
     for (String arg : args.getNonOptionArgs()) {
       if (arg.contains(":")) {
         Path tempDirectory = Files.createTempDirectory("xbuild");
-        // log("cloneRepository", tempDirectory);
+        log(tempDirectory);
         CloneCommand cloneCommand = Git.cloneRepository()
             .setBare(true)
             .setDirectory(tempDirectory.toFile())
@@ -129,16 +130,23 @@ public class MainTwo implements ApplicationRunner {
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
       //###TODO throw if getRemoteNames().size()!=1 and have a --remote option
-      final String branch = repo.getBranch(); // e.g., "master"
+      String branch = repo.getBranch(); // e.g., "master"
+
+      for (String arg : args.getNonOptionArgs()) {
+        Ref ref = repo.findRef(arg);
+        if (ref!=null)
+          branch = arg;
+      }
+
       log("branch", branch);
-  
+
       // refs/remotes/origin/master
       // bare: c7c03329ef0ae21496552219a38caa6d16dfb73f refs/heads/master
       // not bare: 514dc7579c43e673bdf613e01690371438661260 refs/remotes/origin/master
 
       String revision = String.format("refs/heads/%s", branch);
-      if (!repo.isBare())
-        revision = String.format("refs/remotes/%s/%s", remote, branch);
+      // if (!repo.isBare())
+      //   revision = String.format("refs/remotes/%s/%s", remote, branch);
   
       Map<Integer, RevCommit> commits = Maps.newTreeMap();
 
