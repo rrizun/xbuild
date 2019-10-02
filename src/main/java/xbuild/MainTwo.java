@@ -169,15 +169,18 @@ public class MainTwo implements ApplicationRunner {
       // if (!repo.isBare())
       //   revision = String.format("refs/remotes/%s/%s", remote, branch);
   
-      Map<Integer, RevCommit> commits = Maps.newTreeMap();
+      Map<Integer, RevCommit> numberToCommit = Maps.newTreeMap();
+      Map<RevCommit, Integer> commitToNumber = Maps.newTreeMap();
 
       // git rev-list master --count --first-parent
       // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
       try (RevWalk walk = new RevWalk(repo)) {
-        int count = 0;
+        int count = -1;
         RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
         while (head != null) {
-          commits.put(count++, head);
+          ++count;
+          numberToCommit.put(count, head);
+          commitToNumber.put(head, count);
           RevCommit[] parents = head.getParents();
           if (parents != null && parents.length > 0) {
             head = walk.parseCommit(parents[0]);
@@ -200,15 +203,15 @@ public class MainTwo implements ApplicationRunner {
       }
   
         // commit number
-        int number = commits.size() - commits.keySet().iterator().next();
-        RevCommit commit = commits.get(commits.size() - number);
+        int number = numberToCommit.size() - numberToCommit.keySet().iterator().next();
+        RevCommit commit = numberToCommit.get(numberToCommit.size() - number);
         // RevCommit commit = Iterables.getLast(commits.values());
   
       // % xbuild number ?
       for (String arg : args.getNonOptionArgs()) {
         if (arg.matches("[0-9]+")) {
           number = Integer.parseInt(arg);
-          commit = Objects.requireNonNull(commits.get(commits.size() - number), "bad commit number");
+          commit = Objects.requireNonNull(numberToCommit.get(numberToCommit.size() - number), "bad commit number");
         }
       }
 
@@ -216,8 +219,11 @@ public class MainTwo implements ApplicationRunner {
       for (String arg : args.getNonOptionArgs()) {
         ObjectId objectId = repo.resolve(arg);
         if (objectId!=null) {
-          System.out.println(objectId);
-          System.exit(SpringApplication.exit(context, ()->0));
+          commit = repo.parseCommit(objectId);
+          number = numberToCommit.size() - commitToNumber.get(commit);
+          String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+          System.out.println(xbuild);
+          exit();
         }
       }
 
