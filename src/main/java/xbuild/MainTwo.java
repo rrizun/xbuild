@@ -128,8 +128,13 @@ public class MainTwo implements ApplicationRunner {
     return new Git(repository);
   }
 
+  private boolean verbose;
+
   @Override
   public void run(ApplicationArguments args) throws Exception {
+
+    verbose = args.getOptionNames().contains("verbose");
+
     if (args.getOptionNames().contains("version")) {
       String version = "version";
       BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
