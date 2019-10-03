@@ -1,2 +1,2 @@
 #!/bin/sh -ex
-cp xbuild $HOME/bin
+cp xbuild.jar $HOME/bin
