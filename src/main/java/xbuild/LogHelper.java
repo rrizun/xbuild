@@ -3,7 +3,6 @@ package xbuild;
 import java.util.*;
 
 import com.google.common.base.*;
-import com.google.common.collect.*;
 
 /**
  * LogHelper
@@ -16,11 +15,11 @@ public class LogHelper {
   }
 
   public void log(Object... args) {
-    List<Object> parts = Lists.newArrayList();
+    List<String> parts = new ArrayList<>();
 //    parts.add(new Date());
 //    parts.add(object);
     for (Object arg : args)
-      parts.add(arg);
-    System.err.println(Joiner.on(" ").useForNull("null").join(parts));
+      parts.add(MoreObjects.firstNonNull(arg, "null").toString());
+    System.err.println(String.join(" ", parts));
   }
 }
