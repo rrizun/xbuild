@@ -129,7 +129,7 @@ public class Main implements ApplicationRunner {
 
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
-  private BiMap<String, RevCommit> countFirstParent(Repository repo, String branch) throws Exception {
+  private BiMap<String, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
     ObjectId objectId = repo.resolve(branch);
     BiMap<String, RevCommit> numberToCommit = HashBiMap.create();
     try (RevWalk walk = new RevWalk(repo)) {
@@ -169,7 +169,7 @@ public class Main implements ApplicationRunner {
         Repository repo = git.getRepository();
 
         String branch = repo.getBranch(); // e.g., "master"
-        BiMap<String, RevCommit> numberToCommit = countFirstParent(repo, branch);
+        BiMap<String, RevCommit> numberToCommit = walkFirstParent(repo, branch);
         String number = null;
         RevCommit commit = null;
         List<String> scripts = Lists.newArrayList();
@@ -180,12 +180,12 @@ public class Main implements ApplicationRunner {
           if (ref != null) {
             log("branch", arg);
             branch = arg;
-            numberToCommit = countFirstParent(repo, branch);
+            numberToCommit = walkFirstParent(repo, branch);
             number = null;
             commit = null;
             scripts.clear();
           } else {
-            // is it a xbuild number?
+            // is it a number?
             if (numberToCommit.containsKey(arg)) {
               log("number", arg);
               number = arg;
