@@ -130,12 +130,11 @@ public class Main implements ApplicationRunner {
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
   private BiMap<String, RevCommit> countFirstParent(Repository repo, String branch) throws Exception {
+    ObjectId objectId = repo.resolve(branch);
     BiMap<String, RevCommit> numberToCommit = HashBiMap.create();
-
     try (RevWalk walk = new RevWalk(repo)) {
       int count = -1;
-      String revision = String.format("refs/heads/%s", branch);
-      RevCommit head = walk.parseCommit(repo.findRef(revision).getObjectId());
+      RevCommit head = walk.parseCommit(objectId);
       while (head != null) {
         ++count;
         numberToCommit.put(""+count, head);
@@ -145,7 +144,6 @@ public class Main implements ApplicationRunner {
           head = walk.parseCommit(parents[0]);
       }
     }
-
     return reverse(numberToCommit);
   }
 
@@ -169,7 +167,7 @@ public class Main implements ApplicationRunner {
 
       try (Git git = createGit(args)) {
         Repository repo = git.getRepository();
-  
+        
         String branch = repo.getBranch(); // e.g., "master"
         BiMap<String, RevCommit> numberToCommit = countFirstParent(repo, branch);
         String number = null;
@@ -187,26 +185,17 @@ public class Main implements ApplicationRunner {
             commit = null;
             scripts.clear();
           } else {
-
             // is it a xbuild number?
             if (numberToCommit.containsKey(arg)) {
               log("number", arg);
               number = arg;
             } else {
-
               // is it a commit?
-              ObjectId objectId = null;
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-              if (arg.length()>=7)
-                objectId = repo.resolve(arg);
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
-              //###TODO THINK ABOUT NUMBER AND COMMIT AMBIGUITY
+              ObjectId objectId = repo.resolve(arg);
               if (objectId != null) {
-                log("commit", arg);
+                log("commit[1]", arg);
                 commit = repo.parseCommit(objectId);
+                log("commit[2]", commit.name());
               } else {
                 // is it a script?
                 log("script", arg);
@@ -215,15 +204,16 @@ public class Main implements ApplicationRunner {
             }
           }
         }
-  
-        // latest commit number
+
+        // resolve number and commit
+
         if (number != null)
-          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
+          commit = Objects.requireNonNull(numberToCommit.get(number), String.format("bad commit number: %s", number));
         else if (commit != null)
-          number = numberToCommit.inverse().get(commit);
+          number = Objects.requireNonNull(numberToCommit.inverse().get(commit), String.format("bad branch/commit: %s/%s", branch, commit.name()));
         else {
           number = latest(numberToCommit.keySet());
-          commit = Objects.requireNonNull(numberToCommit.get(number), "bad commit number");
+          commit = Objects.requireNonNull(numberToCommit.get(number), String.format("bad commit number: %s", number));
         }
   
         // commitTime
