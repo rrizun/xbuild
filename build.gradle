@@ -30,7 +30,7 @@ springBoot {
 }
 
 bootJar {
-	archiveName="xbuild"
+	archiveName="xbuild.jar"
 	destinationDir = file(".")
 	launchScript {
 		script = file("custom.script")

@@ -1,4 +1,4 @@
 #!/bin/sh -ex
 RELEASE_ID=$(curl -s "https://api.github.com/repos/rrizun/xbuild-java/releases/tags/${XBUILD}" | jq .id)
 echo RELEASE_ID $RELEASE_ID
-curl -v -H"Authorization: token ${GITHUB_TOKEN?}" -H"Content-Type: application/octet-stream" "https://uploads.github.com/repos/rrizun/xbuild-java/releases/${RELEASE_ID?}/assets?name=xbuild.jar" --data-binary @xbuild
+curl -v -H"Authorization: token ${GITHUB_TOKEN?}" -H"Content-Type: application/octet-stream" "https://uploads.github.com/repos/rrizun/xbuild-java/releases/${RELEASE_ID?}/assets?name=xbuild.jar" --data-binary @xbuild.jar
