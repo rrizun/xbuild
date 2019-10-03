@@ -78,55 +78,6 @@ public class Main implements ApplicationRunner {
     return null;
   }
 
-  // private Git createGit(ApplicationArguments args) throws Exception {
-
-  //   // try to infer git url, e.g.,
-  //   // git@github.com:torvalds/linux.git
-  //   // https://github.com/torvalds/linux.git
-  //   for (String arg : args.getNonOptionArgs()) {
-  //     if (arg.contains(":")) {
-  //       Path tempDirectory = Files.createTempDirectory("xbuild");
-  //       log(tempDirectory);
-  //       CloneCommand cloneCommand = Git.cloneRepository()
-  //           .setBare(true)
-  //           .setDirectory(tempDirectory.toFile())
-  //           .setURI(arg)
-  //           .setProgressMonitor(new ProgressMonitor(){
-  //             @Override
-  //             public void start(int totalTasks) {
-  //             }
-  //             @Override
-  //             public void beginTask(String title, int totalWork) {
-  //               log(title, totalWork);
-  //             }
-  //             @Override
-  //             public void update(int completed) {
-  //             }
-  //             @Override
-  //             public void endTask() {
-  //             }
-  //             @Override
-  //             public boolean isCancelled() {
-  //               return false;
-  //             }
-  //           })
-  //       // .setURI("/home/rrizun/git/ground-service-old")
-  //       // .setURI("git@github.com:rrizun/xbuild-java.git")
-  //       ;
-  //       return cloneCommand.call();
-  //     }
-  //   }
-
-  //   // try to infer local git dir
-  //   Repository repository = new FileRepositoryBuilder()
-  //       .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
-  //       .readEnvironment() // scan environment GIT_* variables
-  //       .findGitDir() // scan up the file system tree
-  //       // .setBare()
-  //       .build();
-  //   return new Git(repository);
-  // }
-
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
   private BiMap<String, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
@@ -233,22 +184,18 @@ public class Main implements ApplicationRunner {
 
     try {
 
-    verbose = args.getOptionNames().contains("verbose");
+      verbose = args.getOptionNames().contains("verbose");
 
-    if (args.getOptionNames().contains("version")) {
-      String version = "version";
-      BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-      if (buildProperties != null) {
-        version = buildProperties.getVersion();
-        // for (BuildProperties.Entry entry : buildProperties)
-        // log(entry.getKey(), entry.getValue());
-      }
-      System.out.println(version);
-    } else {
-
-      // try (Git git = createGit(args))
-      {
-        // Repository repo = git.getRepository();
+      if (args.getOptionNames().contains("version")) {
+        String version = "version";
+        BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
+        if (buildProperties != null) {
+          version = buildProperties.getVersion();
+          // for (BuildProperties.Entry entry : buildProperties)
+          // log(entry.getKey(), entry.getValue());
+        }
+        System.out.println(version);
+      } else {
 
         for (String arg : args.getNonOptionArgs()) {
           // is it a url?
@@ -294,12 +241,12 @@ public class Main implements ApplicationRunner {
           number = latest(commitMap().keySet());
           commit = Objects.requireNonNull(commitMap().get(number), String.format("bad number: %s", number));
         }
-  
+
         // commitTime
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
-  
+
         Map<String, String> env = Maps.newTreeMap();
-  
+
         String xbuild = String.format("%s-%s-%s", branch(), number, commit.abbreviate(7).name());
 
         env.put("XBUILD", xbuild); // "xbuild is running"
@@ -308,15 +255,15 @@ public class Main implements ApplicationRunner {
         env.put("XBUILD_COMMIT", commit.name());
         env.put("XBUILD_COMMITTIME", commitTime);
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
-  
+
         for (Map.Entry<String, String> entry : env.entrySet())
           log(String.format("%s=%s", entry.getKey(), entry.getValue()));
 
         System.out.println(xbuild);
-  
+
         if (scripts.size()>0) {
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  
+
           log("git archive", commit.abbreviate(7).name());
     
           git().archive()
@@ -348,8 +295,6 @@ public class Main implements ApplicationRunner {
           }
         }
       }
-  
-    }
 
     } catch (Exception e) {
       System.err.println(e.getMessage());
