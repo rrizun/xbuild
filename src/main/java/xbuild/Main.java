@@ -82,20 +82,20 @@ public class Main implements ApplicationRunner {
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
   private BiMap<String, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
     ObjectId objectId = repo.resolve(branch);
-    BiMap<String, RevCommit> numberToCommit = HashBiMap.create();
+    BiMap<String, RevCommit> commitMap = HashBiMap.create();
     try (RevWalk walk = new RevWalk(repo)) {
       int count = -1;
       RevCommit head = walk.parseCommit(objectId);
       while (head != null) {
         ++count;
-        numberToCommit.put(""+count, head);
+        commitMap.put(""+count, head);
         RevCommit[] parents = head.getParents();
         head = null;
         if (parents != null && parents.length > 0)
           head = walk.parseCommit(parents[0]);
       }
     }
-    return reverse(numberToCommit);
+    return reverse(commitMap);
   }
 
   private boolean verbose = true;
