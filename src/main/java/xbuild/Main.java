@@ -49,6 +49,7 @@ import org.springframework.context.ApplicationContext;
 public class Main implements ApplicationRunner {
 
   public static void main(String[] args) throws Exception {
+    // args = new String[]{"asdf"};
     // args = new String[]{"git@github.com:rrizun/xbuild-java.git"};
     SpringApplication.run(Main.class, args);
   }
@@ -106,6 +107,7 @@ public class Main implements ApplicationRunner {
   private String number;
   private RevCommit commit;
   private final List<String> scripts = Lists.newArrayList();
+  private Path workTree;
 
   // lazy
   private Git git() throws Exception {
@@ -165,6 +167,29 @@ public class Main implements ApplicationRunner {
     number = null;
     commit = null;
     scripts.clear();
+    workTree = null;
+  }
+
+  // lazy
+  private Path workTree() throws Exception {
+    if (workTree == null) {
+      workTree = Files.createTempDirectory("xbuild");
+
+      log(workTree);
+
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+      log("archive", commit.abbreviate(7).name());
+  
+      git().archive()
+        .setFormat("tar")
+        .setOutputStream(baos)
+        .setTree(commit)
+        .call();
+
+      untar(new ByteArrayInputStream(baos.toByteArray()), workTree);
+    }
+    return workTree;
   }
 
   // lazy
@@ -221,8 +246,16 @@ public class Main implements ApplicationRunner {
                   log("commit[2]", commit.name());
                 } else {
                   // is it a script?
-                  log("script", arg);
-                  scripts.add(arg);
+                  // File file = new File(workTree().toFile(), arg);
+                  // boolean script = file.exists();
+                  // if (script)
+                  //   script = file.isFile();
+                  // if (script) {
+                    log("script", arg);
+                    scripts.add(arg);
+                  // } else {
+                  //   throw new Exception(arg);
+                  // }
                 }
               }
             }
@@ -261,42 +294,42 @@ public class Main implements ApplicationRunner {
         System.out.println(xbuild);
 
         if (scripts.size()>0) {
-          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          // ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-          log("git archive", commit.abbreviate(7).name());
+          // log("git archive", commit.abbreviate(7).name());
     
-          git().archive()
-            .setFormat("tar")
-            .setOutputStream(baos)
-            .setTree(commit)
-            .call();
+          // git().archive()
+          //   .setFormat("tar")
+          //   .setOutputStream(baos)
+          //   .setTree(commit)
+          //   .call();
     
-          Path tmpDir = Files.createTempDirectory("xbuild");
-          log(tmpDir);
+          // Path tmpDir = Files.createTempDirectory("xbuild");
+          // log(tmpDir);
     
-          ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
+          // ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
     
-          untar(in, tmpDir);
+          // untar(in, tmpDir);
     
           // invoke xbuildfile
-          if (new File(tmpDir.toFile(), "xbuildfile").exists())
-            Posix.run(tmpDir, env, "./xbuildfile");
-          else if (new File(tmpDir.toFile(), ".xbuild").exists())
-            Posix.run(tmpDir, env, "./.xbuild"); // legacy
+          if (new File(workTree().toFile(), "xbuildfile").exists())
+            Posix.run(workTree(), env, "./xbuildfile");
+          else if (new File(workTree().toFile(), ".xbuild").exists())
+            Posix.run(workTree(), env, "./.xbuild"); // legacy
     
           // run deploy script, e.g., xdeploy-dev
           for (String script : scripts) {
-            File file = new File(tmpDir.toFile(), script);
+            File file = new File(workTree().toFile(), script);
             if (file.exists()) {
               if (file.isFile())
-                Posix.run(tmpDir, env, String.format("./%s", script));
+                Posix.run(workTree(), env, String.format("./%s", script));
             }
           }
         }
       }
 
     } catch (Exception e) {
-      System.err.println(e.getMessage());
+      System.err.println(e.toString());
       exit(1);
     }
 
