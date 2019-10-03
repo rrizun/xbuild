@@ -375,13 +375,8 @@ public class Main implements ApplicationRunner {
             Posix.run(workTree(), env, "./.xbuild"); // legacy
     
           // run deploy script, e.g., xdeploy-dev
-          for (String script : scripts) {
-            File file = new File(workTree().toFile(), script);
-            if (file.exists()) {
-              if (file.isFile())
-                Posix.run(workTree(), env, String.format("./%s", script));
-            }
-          }
+          for (String script : scripts)
+            Posix.run(workTree(), env, String.format("./%s", script));
         }
       }
 
