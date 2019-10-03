@@ -167,7 +167,7 @@ public class Main implements ApplicationRunner {
 
       try (Git git = createGit(args)) {
         Repository repo = git.getRepository();
-        
+
         String branch = repo.getBranch(); // e.g., "master"
         BiMap<String, RevCommit> numberToCommit = countFirstParent(repo, branch);
         String number = null;
@@ -223,8 +223,6 @@ public class Main implements ApplicationRunner {
   
         String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
 
-        System.out.println(xbuild);
-  
         env.put("XBUILD", xbuild); // "xbuild is running"
         env.put("XBUILD_BRANCH", branch);
         env.put("XBUILD_NUMBER", "" + number);
@@ -232,8 +230,11 @@ public class Main implements ApplicationRunner {
         env.put("XBUILD_COMMITTIME", commitTime);
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
   
-        log(env);
+        for (Map.Entry<String, String> entry : env.entrySet())
+          log(String.format("%s=%s", entry.getKey(), entry.getValue()));
 
+        System.out.println(xbuild);
+  
         if (scripts.size()>0) {
           ByteArrayOutputStream baos = new ByteArrayOutputStream();
   
