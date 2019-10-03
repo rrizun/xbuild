@@ -1,14 +1,20 @@
 #!/bin/sh -ex
 
-response_code=$(curl -sv -o out.txt -w "%{response_code}" -H"Authorization: Token ${GITHUB_TOKEN?}" https://api.github.com/repos/rrizun/xbuild-java/releases -d @-) << EOF
+response_code=$(curl -sv -o output -w "%{response_code}" -H"Authorization: Token ${GITHUB_TOKEN?}" https://api.github.com/repos/rrizun/xbuild-java/releases -d @-) << EOF
 {
   "tag_name": "${XBUILD}",
   "target_commitish": "${XBUILD_COMMIT}"
 }
 EOF
 
-cat out.txt
+cat output
 
 if [ $response_code -lt 400 ]; then
-  echo success
+
+  release_id=$(jq .id output)
+  
+  response_code=$(curl -sv -o out.txt -w "%{response_code}" -H"Authorization: token ${GITHUB_TOKEN?}" -H"Content-Type: application/octet-stream" "https://uploads.github.com/repos/rrizun/xbuild-java/releases/$release_id/assets?name=xbuild.jar" --data-binary @xbuild.jar)
+
+  cat output
+
 fi
