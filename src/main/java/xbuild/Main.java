@@ -290,57 +290,13 @@ public class Main implements ApplicationRunner {
         if (nonOptionArgs.size()>0)
           throw new Exception("bad arg(s):"+nonOptionArgs.toString());
 
-        // for (String arg : args.getNonOptionArgs()) {
-        //   // is it a url?
-        //   if (arg.contains(":")) {
-        //     log("url", arg);
-        //     setGit(arg);
-        //   } else {
-        //     // is it a branch?
-        //     Ref ref = git().getRepository().findRef(arg);
-        //     if (ref != null) {
-        //       log("branch", arg);
-        //       setBranch(arg);
-        //     } else {
-        //       // is it a number?
-        //       if (commitMap().containsKey(arg)) {
-        //         log("number", arg);
-        //         number = arg;
-        //       } else {
-        //         // is it a commit?
-        //         ObjectId objectId = git().getRepository().resolve(arg);
-        //         if (objectId != null) {
-        //           log("commit[1]", arg);
-        //           commit = git().getRepository().parseCommit(objectId);
-        //           log("commit[2]", commit.name());
-        //         } else {
-        //           // is it a script?
-        //           // File file = new File(workTree().toFile(), arg);
-        //           // boolean script = file.exists();
-        //           // if (script)
-        //           //   script = file.isFile();
-        //           // if (script) {
-        //             log("script", arg);
-        //             scripts.add(arg);
-        //           // } else {
-        //           //   throw new Exception(arg);
-        //           // }
-        //         }
-        //       }
-        //     }
-        //   }
-        // }
-
-        // commitTime
+        String xbuild = String.format("%s-%s-%s", branch(), number, commit.abbreviate(7).name());
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
         Map<String, String> env = Maps.newTreeMap();
-
-        String xbuild = String.format("%s-%s-%s", branch(), number, commit.abbreviate(7).name());
-
         env.put("XBUILD", xbuild); // "xbuild is running"
         env.put("XBUILD_BRANCH", branch());
-        env.put("XBUILD_NUMBER", "" + number);
+        env.put("XBUILD_NUMBER", number);
         env.put("XBUILD_COMMIT", commit.name());
         env.put("XBUILD_COMMITTIME", commitTime);
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
@@ -351,30 +307,13 @@ public class Main implements ApplicationRunner {
         System.out.println(xbuild);
 
         if (scripts.size()>0) {
-          // ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-          // log("git archive", commit.abbreviate(7).name());
-    
-          // git().archive()
-          //   .setFormat("tar")
-          //   .setOutputStream(baos)
-          //   .setTree(commit)
-          //   .call();
-    
-          // Path tmpDir = Files.createTempDirectory("xbuild");
-          // log(tmpDir);
-    
-          // ByteArrayInputStream in = new ByteArrayInputStream(baos.toByteArray());
-    
-          // untar(in, tmpDir);
-    
-          // invoke xbuildfile
+          // run xbuildfile
           if (new File(workTree().toFile(), "xbuildfile").exists())
             Posix.run(workTree(), env, "./xbuildfile");
           else if (new File(workTree().toFile(), ".xbuild").exists())
             Posix.run(workTree(), env, "./.xbuild"); // legacy
     
-          // run deploy script, e.g., xdeploy-dev
+          // run deploy scripts, e.g., xdeploy-dev
           for (String script : scripts)
             Posix.run(workTree(), env, String.format("./%s", script));
         }
@@ -396,7 +335,7 @@ public class Main implements ApplicationRunner {
   }
   
   private BiMap<String, RevCommit> reverse(BiMap<String, RevCommit> input) {
-    BiMap<String, RevCommit> output = HashBiMap.create();;
+    BiMap<String, RevCommit> output = HashBiMap.create();
     for (Map.Entry<String, RevCommit> entry : input.entrySet())
       output.put(""+(input.size()-Integer.parseInt(entry.getKey())), entry.getValue());
     return output;
