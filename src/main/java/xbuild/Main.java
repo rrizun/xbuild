@@ -78,54 +78,54 @@ public class Main implements ApplicationRunner {
     return null;
   }
 
-  private Git createGit(ApplicationArguments args) throws Exception {
+  // private Git createGit(ApplicationArguments args) throws Exception {
 
-    // try to infer git url, e.g.,
-    // git@github.com:torvalds/linux.git
-    // https://github.com/torvalds/linux.git
-    for (String arg : args.getNonOptionArgs()) {
-      if (arg.contains(":")) {
-        Path tempDirectory = Files.createTempDirectory("xbuild");
-        log(tempDirectory);
-        CloneCommand cloneCommand = Git.cloneRepository()
-            .setBare(true)
-            .setDirectory(tempDirectory.toFile())
-            .setURI(arg)
-            .setProgressMonitor(new ProgressMonitor(){
-              @Override
-              public void start(int totalTasks) {
-              }
-              @Override
-              public void beginTask(String title, int totalWork) {
-                log(title, totalWork);
-              }
-              @Override
-              public void update(int completed) {
-              }
-              @Override
-              public void endTask() {
-              }
-              @Override
-              public boolean isCancelled() {
-                return false;
-              }
-            })
-        // .setURI("/home/rrizun/git/ground-service-old")
-        // .setURI("git@github.com:rrizun/xbuild-java.git")
-        ;
-        return cloneCommand.call();
-      }
-    }
+  //   // try to infer git url, e.g.,
+  //   // git@github.com:torvalds/linux.git
+  //   // https://github.com/torvalds/linux.git
+  //   for (String arg : args.getNonOptionArgs()) {
+  //     if (arg.contains(":")) {
+  //       Path tempDirectory = Files.createTempDirectory("xbuild");
+  //       log(tempDirectory);
+  //       CloneCommand cloneCommand = Git.cloneRepository()
+  //           .setBare(true)
+  //           .setDirectory(tempDirectory.toFile())
+  //           .setURI(arg)
+  //           .setProgressMonitor(new ProgressMonitor(){
+  //             @Override
+  //             public void start(int totalTasks) {
+  //             }
+  //             @Override
+  //             public void beginTask(String title, int totalWork) {
+  //               log(title, totalWork);
+  //             }
+  //             @Override
+  //             public void update(int completed) {
+  //             }
+  //             @Override
+  //             public void endTask() {
+  //             }
+  //             @Override
+  //             public boolean isCancelled() {
+  //               return false;
+  //             }
+  //           })
+  //       // .setURI("/home/rrizun/git/ground-service-old")
+  //       // .setURI("git@github.com:rrizun/xbuild-java.git")
+  //       ;
+  //       return cloneCommand.call();
+  //     }
+  //   }
 
-    // try to infer local git dir
-    Repository repository = new FileRepositoryBuilder()
-        .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
-        .readEnvironment() // scan environment GIT_* variables
-        .findGitDir() // scan up the file system tree
-        // .setBare()
-        .build();
-    return new Git(repository);
-  }
+  //   // try to infer local git dir
+  //   Repository repository = new FileRepositoryBuilder()
+  //       .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
+  //       .readEnvironment() // scan environment GIT_* variables
+  //       .findGitDir() // scan up the file system tree
+  //       // .setBare()
+  //       .build();
+  //   return new Git(repository);
+  // }
 
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
@@ -149,6 +149,64 @@ public class Main implements ApplicationRunner {
 
   private boolean verbose;
 
+  private Git privateGit;
+  private String branch; // e.g., "master"
+  private BiMap<String, RevCommit> numberToCommit;
+  private String number;
+  private RevCommit commit;
+  private final List<String> scripts = Lists.newArrayList();
+
+  // lazy
+  private Git getGit() throws Exception {
+    if (privateGit == null) {
+      Repository repository = new FileRepositoryBuilder()
+      // .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
+      .readEnvironment() // scan environment GIT_* variables
+      .findGitDir() // scan up the file system tree
+      // .setBare()
+      .build();
+      privateGit = new Git(repository);
+      branch = privateGit.getRepository().getBranch();
+      numberToCommit = walkFirstParent(privateGit.getRepository(), branch);
+    }
+    return privateGit;
+  }
+
+  private void setGit(String url) throws Exception {
+    Path tempDirectory = Files.createTempDirectory("xbuild");
+    log(tempDirectory);
+    CloneCommand cloneCommand = Git.cloneRepository()
+        .setBare(true)
+        .setDirectory(tempDirectory.toFile())
+        .setURI(url)
+        .setProgressMonitor(new ProgressMonitor(){
+          @Override
+          public void start(int totalTasks) {
+          }
+          @Override
+          public void beginTask(String title, int totalWork) {
+            log(title, totalWork);
+          }
+          @Override
+          public void update(int completed) {
+          }
+          @Override
+          public void endTask() {
+          }
+          @Override
+          public boolean isCancelled() {
+            return false;
+          }
+        })
+    ;
+    privateGit = cloneCommand.call();
+    branch = privateGit.getRepository().getBranch();
+    numberToCommit = walkFirstParent(privateGit.getRepository(), branch);
+    number = null;
+    commit = null;
+    scripts.clear();
+  }
+
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
@@ -165,26 +223,22 @@ public class Main implements ApplicationRunner {
       System.out.println(version);
     } else {
 
-      try (Git git = createGit(args)) {
-        Repository repo = git.getRepository();
-
-        String branch = repo.getBranch(); // e.g., "master"
-        BiMap<String, RevCommit> numberToCommit = walkFirstParent(repo, branch);
-        String number = null;
-        RevCommit commit = null;
-        List<String> scripts = Lists.newArrayList();
+      // try (Git git = createGit(args))
+      {
+        // Repository repo = git.getRepository();
 
         for (String arg : args.getNonOptionArgs()) {
           // is it a url?
           if (arg.contains(":")) {
             log("url", arg);
+            setGit(arg);
           } else {
             // is it a branch?
-            Ref ref = repo.findRef(arg);
+            Ref ref = getGit().getRepository().findRef(arg);
             if (ref != null) {
               log("branch", arg);
               branch = arg;
-              numberToCommit = walkFirstParent(repo, branch);
+              numberToCommit = walkFirstParent(getGit().getRepository(), branch);
               number = null;
               commit = null;
               scripts.clear();
@@ -195,10 +249,10 @@ public class Main implements ApplicationRunner {
                 number = arg;
               } else {
                 // is it a commit?
-                ObjectId objectId = repo.resolve(arg);
+                ObjectId objectId = getGit().getRepository().resolve(arg);
                 if (objectId != null) {
                   log("commit[1]", arg);
-                  commit = repo.parseCommit(objectId);
+                  commit = getGit().getRepository().parseCommit(objectId);
                   log("commit[2]", commit.name());
                 } else {
                   // is it a script?
@@ -209,6 +263,8 @@ public class Main implements ApplicationRunner {
             }
           }
         }
+
+        final Git git = getGit();
 
         // resolve number and commit
 
@@ -245,7 +301,7 @@ public class Main implements ApplicationRunner {
   
           log("git archive", commit.abbreviate(7).name());
     
-          git.archive()
+          getGit().archive()
             .setFormat("tar")
             .setOutputStream(baos)
             .setTree(commit)
