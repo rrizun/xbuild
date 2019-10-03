@@ -175,31 +175,36 @@ public class Main implements ApplicationRunner {
         List<String> scripts = Lists.newArrayList();
 
         for (String arg : args.getNonOptionArgs()) {
-          // is it a branch?
-          Ref ref = repo.findRef(arg);
-          if (ref != null) {
-            log("branch", arg);
-            branch = arg;
-            numberToCommit = walkFirstParent(repo, branch);
-            number = null;
-            commit = null;
-            scripts.clear();
+          // is it a url?
+          if (arg.contains(":")) {
+            log("url", arg);
           } else {
-            // is it a number?
-            if (numberToCommit.containsKey(arg)) {
-              log("number", arg);
-              number = arg;
+            // is it a branch?
+            Ref ref = repo.findRef(arg);
+            if (ref != null) {
+              log("branch", arg);
+              branch = arg;
+              numberToCommit = walkFirstParent(repo, branch);
+              number = null;
+              commit = null;
+              scripts.clear();
             } else {
-              // is it a commit?
-              ObjectId objectId = repo.resolve(arg);
-              if (objectId != null) {
-                log("commit[1]", arg);
-                commit = repo.parseCommit(objectId);
-                log("commit[2]", commit.name());
+              // is it a number?
+              if (numberToCommit.containsKey(arg)) {
+                log("number", arg);
+                number = arg;
               } else {
-                // is it a script?
-                log("script", arg);
-                scripts.add(arg);
+                // is it a commit?
+                ObjectId objectId = repo.resolve(arg);
+                if (objectId != null) {
+                  log("commit[1]", arg);
+                  commit = repo.parseCommit(objectId);
+                  log("commit[2]", commit.name());
+                } else {
+                  // is it a script?
+                  log("script", arg);
+                  scripts.add(arg);
+                }
               }
             }
           }
