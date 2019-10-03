@@ -100,6 +100,7 @@ public class Main implements ApplicationRunner {
   }
 
   private boolean verbose = true;
+  private final List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList();
 
   private Git privateGit;
   private String privateBranch; // e.g., "master"
@@ -221,44 +222,44 @@ public class Main implements ApplicationRunner {
         System.out.println(version);
       } else {
 
-        for (String arg : args.getNonOptionArgs()) {
-          // is it a url?
+        nonOptionArgs.addAll(args.getNonOptionArgs());
+
+        // url
+        for (String arg : nonOptionArgs) {
           if (arg.contains(":")) {
             log("url", arg);
             setGit(arg);
-          } else {
-            // is it a branch?
-            Ref ref = git().getRepository().findRef(arg);
-            if (ref != null) {
-              log("branch", arg);
-              setBranch(arg);
-            } else {
-              // is it a number?
-              if (commitMap().containsKey(arg)) {
-                log("number", arg);
-                number = arg;
-              } else {
-                // is it a commit?
-                ObjectId objectId = git().getRepository().resolve(arg);
-                if (objectId != null) {
-                  log("commit[1]", arg);
-                  commit = git().getRepository().parseCommit(objectId);
-                  log("commit[2]", commit.name());
-                } else {
-                  // is it a script?
-                  // File file = new File(workTree().toFile(), arg);
-                  // boolean script = file.exists();
-                  // if (script)
-                  //   script = file.isFile();
-                  // if (script) {
-                    log("script", arg);
-                    scripts.add(arg);
-                  // } else {
-                  //   throw new Exception(arg);
-                  // }
-                }
-              }
-            }
+            nonOptionArgs.remove(arg);
+          }
+        }
+
+        // branch
+        for (String arg : nonOptionArgs) {
+          Ref ref = git().getRepository().findRef(arg);
+          if (ref != null) {
+            log("branch", arg);
+            setBranch(arg);
+            nonOptionArgs.remove(arg);
+          }
+        }
+
+        // number
+        for (String arg : nonOptionArgs) {
+          if (commitMap().containsKey(arg)) {
+            log("number", arg);
+            number = arg;
+            nonOptionArgs.remove(arg);
+          }
+        }
+
+        // commit
+        for (String arg : nonOptionArgs) {
+          ObjectId objectId = git().getRepository().resolve(arg);
+          if (objectId != null) {
+            log("commit[1]", arg);
+            commit = git().getRepository().parseCommit(objectId);
+            log("commit[2]", commit.name());
+            nonOptionArgs.remove(arg);
           }
         }
 
@@ -273,6 +274,62 @@ public class Main implements ApplicationRunner {
           number = latest(commitMap().keySet());
           commit = Objects.requireNonNull(commitMap().get(number), String.format("bad number: %s", number));
         }
+
+        // script
+        for (String arg : nonOptionArgs) {
+          File file = new File(workTree().toFile(), arg);
+          if (file.exists()) {
+            if (file.isFile()) {
+              log("script", arg);
+              scripts.add(arg);
+              nonOptionArgs.remove(arg);
+            }
+          }
+        }
+
+        if (nonOptionArgs.size()>0)
+          throw new Exception("bad arg(s):"+nonOptionArgs.toString());
+
+        // for (String arg : args.getNonOptionArgs()) {
+        //   // is it a url?
+        //   if (arg.contains(":")) {
+        //     log("url", arg);
+        //     setGit(arg);
+        //   } else {
+        //     // is it a branch?
+        //     Ref ref = git().getRepository().findRef(arg);
+        //     if (ref != null) {
+        //       log("branch", arg);
+        //       setBranch(arg);
+        //     } else {
+        //       // is it a number?
+        //       if (commitMap().containsKey(arg)) {
+        //         log("number", arg);
+        //         number = arg;
+        //       } else {
+        //         // is it a commit?
+        //         ObjectId objectId = git().getRepository().resolve(arg);
+        //         if (objectId != null) {
+        //           log("commit[1]", arg);
+        //           commit = git().getRepository().parseCommit(objectId);
+        //           log("commit[2]", commit.name());
+        //         } else {
+        //           // is it a script?
+        //           // File file = new File(workTree().toFile(), arg);
+        //           // boolean script = file.exists();
+        //           // if (script)
+        //           //   script = file.isFile();
+        //           // if (script) {
+        //             log("script", arg);
+        //             scripts.add(arg);
+        //           // } else {
+        //           //   throw new Exception(arg);
+        //           // }
+        //         }
+        //       }
+        //     }
+        //   }
+        // }
 
         // commitTime
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
@@ -329,6 +386,7 @@ public class Main implements ApplicationRunner {
       }
 
     } catch (Exception e) {
+      e.printStackTrace();
       System.err.println(e.toString());
       exit(1);
     }
