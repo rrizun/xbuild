@@ -98,7 +98,7 @@ public class Main implements ApplicationRunner {
     return reverse(numberToCommit);
   }
 
-  private boolean verbose;
+  private boolean verbose = true;
 
   private Git privateGit;
   private String privateBranch; // e.g., "master"
@@ -149,11 +149,7 @@ public class Main implements ApplicationRunner {
         })
         ;
     privateGit = cloneCommand.call();
-    privateBranch = null;;
-    privateCommitMap = null;
-    number = null;
-    commit = null;
-    scripts.clear();
+    setBranch(null);
   }
 
   // lazy
@@ -184,7 +180,10 @@ public class Main implements ApplicationRunner {
 
     try {
 
-      verbose = args.getOptionNames().contains("verbose");
+      if (args.getOptionNames().contains("silent"))
+        verbose = false;
+      if (args.getOptionNames().contains("verbose"))
+        verbose = true;
 
       if (args.getOptionNames().contains("version")) {
         String version = "version";
