@@ -210,6 +210,8 @@ public class Main implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
+    try {
+
     verbose = args.getOptionNames().contains("verbose");
 
     if (args.getOptionNames().contains("version")) {
@@ -333,6 +335,11 @@ public class Main implements ApplicationRunner {
   
     }
 
+    } catch (Exception e) {
+      System.err.println(e.getMessage());
+      exit(1);
+    }
+
   }
 
   private String latest(Set<String> numbers) {
@@ -371,9 +378,9 @@ public class Main implements ApplicationRunner {
     }
   }
 
-  // private void exit() {
-  //   System.exit(SpringApplication.exit(context, ()->0));
-  // }
+  private void exit(int exitCode) {
+    System.exit(SpringApplication.exit(context, () -> exitCode));
+  }
 
 	private void log(Object... args) {
     if (verbose)
