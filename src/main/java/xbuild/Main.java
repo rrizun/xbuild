@@ -109,7 +109,7 @@ public class Main implements ApplicationRunner {
   private String number;
   private RevCommit commit;
   private final List<String> scripts = Lists.newArrayList();
-  private Path workTree;
+  private Path archive;
 
   // lazy
   private Git git() throws Exception {
@@ -156,11 +156,11 @@ public class Main implements ApplicationRunner {
   }
 
   // lazy
-  private Path workTree() throws Exception {
-    if (workTree == null) {
-      workTree = Files.createTempDirectory("xbuild");
+  private Path archive() throws Exception {
+    if (archive == null) {
+      archive = Files.createTempDirectory("xbuild");
 
-      log(workTree);
+      log("archive", archive);
 
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -170,9 +170,9 @@ public class Main implements ApplicationRunner {
         .setTree(commit)
         .call();
 
-      untar(new ByteArrayInputStream(baos.toByteArray()), workTree);
+      untar(new ByteArrayInputStream(baos.toByteArray()), archive);
     }
-    return workTree;
+    return archive;
   }
 
   @Override
@@ -254,7 +254,7 @@ public class Main implements ApplicationRunner {
 
         // scripts?
         for (String arg : nonOptionArgs) {
-          File file = new File(workTree().toFile(), arg);
+          File file = new File(archive().toFile(), arg);
           if (file.exists()) {
             if (file.isFile()) {
               log("script", arg);
@@ -283,14 +283,14 @@ public class Main implements ApplicationRunner {
 
         if (scripts.size() > 0) {
           // run xbuildfile
-          if (new File(workTree().toFile(), "xbuildfile").exists())
-            Posix.run(workTree(), env, "./xbuildfile");
-          else if (new File(workTree().toFile(), ".xbuild").exists())
-            Posix.run(workTree(), env, "./.xbuild"); // legacy
+          if (new File(archive().toFile(), "xbuildfile").exists())
+            Posix.run(archive(), env, "./xbuildfile");
+          else if (new File(archive().toFile(), ".xbuild").exists())
+            Posix.run(archive(), env, "./.xbuild"); // legacy
     
           // run deploy scripts, e.g., xdeploy-dev
           for (String script : scripts)
-            Posix.run(workTree(), env, String.format("./%s", script));
+            Posix.run(archive(), env, String.format("./%s", script));
         }
       }
 
