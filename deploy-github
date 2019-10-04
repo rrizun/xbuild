@@ -13,7 +13,7 @@ if [ $response_code -lt 400 ]; then
 
   release_id=$(jq .id output)
   
-  response_code=$(curl -sv -o out.txt -w "%{response_code}" -H"Authorization: token ${GITHUB_TOKEN?}" -H"Content-Type: application/octet-stream" "https://uploads.github.com/repos/rrizun/xbuild-java/releases/$release_id/assets?name=xbuild.jar" --data-binary @xbuild.jar)
+  response_code=$(curl -sv -o out.txt -w "%{response_code}" -H"Authorization: token ${GITHUB_TOKEN?}" -H"Content-Type: application/octet-stream" "https://uploads.github.com/repos/rrizun/xbuild-java/releases/$release_id/assets?name=xbuild.jar.zip" --data-binary @xbuild.jar.zip)
 
   cat output
 
