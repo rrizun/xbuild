@@ -103,8 +103,6 @@ public class Main implements ApplicationRunner {
   private final List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList();
 
   private Git privateGit;
-  // private String branch; // e.g., "master"
-  // private BiMap<String, RevCommit> privateCommitMap;
   private String number;
   private RevCommit commit;
   private final List<String> scripts = Lists.newArrayList();
@@ -154,22 +152,6 @@ public class Main implements ApplicationRunner {
     privateGit = cloneCommand.call();
   }
 
-  // // lazy
-  // private String branch() throws Exception {
-  //   if (privateBranch == null)
-  //     privateBranch = git().getRepository().getBranch();
-  //   return privateBranch;
-  // }
-
-  // private void setBranch(String branch) throws Exception {
-  //   privateBranch = branch;
-  //   privateCommitMap = null;
-  //   number = null;
-  //   commit = null;
-  //   scripts.clear();
-  //   workTree = null;
-  // }
-
   // lazy
   private Path workTree() throws Exception {
     if (workTree == null) {
@@ -191,14 +173,6 @@ public class Main implements ApplicationRunner {
     }
     return workTree;
   }
-
-  // // lazy
-  // private BiMap<String, RevCommit> commitMap() throws Exception {
-  //   if (privateCommitMap == null) {
-  //     privateCommitMap = walkFirstParent(git().getRepository(), branch);
-  //   }
-  //   return privateCommitMap;
-  // }
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
