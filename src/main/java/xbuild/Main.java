@@ -275,7 +275,7 @@ public class Main implements ApplicationRunner {
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
 
         for (Map.Entry<String, String> entry : env.entrySet())
-          log(String.format("%s=%s", entry.getKey(), entry.getValue()));
+          log(String.format("%s = %s", entry.getKey(), entry.getValue()));
 
         System.out.println(xbuild);
 
