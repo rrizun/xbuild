@@ -186,13 +186,15 @@ public class Main implements ApplicationRunner {
 
       if (args.getOptionNames().contains("version")) {
         
-        buildProperties.ifPresent((props)->{System.out.println(props.getVersion());});
-      
+        buildProperties.ifPresent((props) -> {
+          log("xbuild", props.getVersion());
+        });
+  
       } else {
 
         List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
 
-        // url
+        // url?
         for (String arg : nonOptionArgs) {
           if (arg.contains(":")) {
             log("url", arg);
@@ -201,7 +203,7 @@ public class Main implements ApplicationRunner {
           }
         }
 
-        // branch
+        // branch?
         String branch = git().getRepository().getBranch();
         for (String arg : nonOptionArgs) {
           Ref ref = git().getRepository().findRef(arg);
@@ -214,7 +216,7 @@ public class Main implements ApplicationRunner {
 
         BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
 
-        // number
+        // number?
         for (String arg : nonOptionArgs) {
           if (commitMap.containsKey(arg)) {
             log("number", arg);
@@ -223,7 +225,7 @@ public class Main implements ApplicationRunner {
           }
         }
 
-        // commit
+        // commit?
         for (String arg : nonOptionArgs) {
           ObjectId objectId = git().getRepository().resolve(arg);
           if (objectId != null) {
@@ -246,7 +248,7 @@ public class Main implements ApplicationRunner {
           commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
         }
 
-        // script
+        // scripts?
         for (String arg : nonOptionArgs) {
           File file = new File(workTree().toFile(), arg);
           if (file.exists()) {
