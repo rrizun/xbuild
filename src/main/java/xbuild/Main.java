@@ -266,7 +266,7 @@ public class Main implements ApplicationRunner {
         String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
-        Map<String, String> env = Maps.newTreeMap();
+        Map<String, String> env = Maps.newHashMap();
         env.put("XBUILD", xbuild); // "xbuild is running"
         env.put("XBUILD_BRANCH", branch);
         env.put("XBUILD_NUMBER", number);
@@ -275,9 +275,7 @@ public class Main implements ApplicationRunner {
         env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
 
         for (Map.Entry<String, String> entry : env.entrySet())
-          log(String.format("%s = %s", entry.getKey(), entry.getValue()));
-
-        System.out.println(xbuild);
+          System.out.println(String.format("%s = %s", entry.getKey(), entry.getValue()));
 
         if (scripts.size() > 0) {
           // run xbuildfile
