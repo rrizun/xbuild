@@ -102,6 +102,7 @@ public class Main implements ApplicationRunner {
     return reverse(commitMap);
   }
 
+  private boolean debug;
   private boolean verbose = true;
 
   private Git privateGit;
@@ -178,6 +179,9 @@ public class Main implements ApplicationRunner {
   public void run(ApplicationArguments args) throws Exception {
 
     try {
+
+      if (args.getOptionNames().contains("debug"))
+        debug = true;
 
       if (args.getOptionNames().contains("silent"))
         verbose = false;
@@ -291,8 +295,9 @@ public class Main implements ApplicationRunner {
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
       System.err.println(e.toString());
+      if (debug)
+        e.printStackTrace();
       exit(1);
     }
 
