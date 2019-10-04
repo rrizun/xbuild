@@ -1,1 +1,3 @@
-# xbuild-java
+# xbuild-jar
+
+https://github.com/xbuild-jar/xbuild-jar/wiki
