@@ -11,5 +11,8 @@ if [ "${XBUILD}" ]; then
   echo "xbuild.number=${XBUILD_NUMBER?}" >> ${xbuildpropertiesfile?}
   echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${xbuildpropertiesfile?}
   echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${xbuildpropertiesfile?}
+  # for pip install
+  sed s/VERSION/0.9.${XBUILD_NUMBER?}/ setup.py.in > setup.py
+  zip xbuild.jar.zip setup.py xbuild.jar
 fi
 gradle bootJar

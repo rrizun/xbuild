@@ -1,0 +1,2 @@
+import setuptools
+setuptools.setup(name="xbuild.jar", version="VERSION", scripts=["xbuild.jar"])
