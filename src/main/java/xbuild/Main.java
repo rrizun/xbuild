@@ -100,7 +100,6 @@ public class Main implements ApplicationRunner {
   }
 
   private boolean verbose = true;
-  private final List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList();
 
   private Git privateGit;
   private String number;
@@ -177,6 +176,8 @@ public class Main implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
+    List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
+
     try {
 
       if (args.getOptionNames().contains("silent"))
@@ -196,8 +197,6 @@ public class Main implements ApplicationRunner {
         System.out.println(version);
       
       } else {
-
-        nonOptionArgs.addAll(args.getNonOptionArgs());
 
         // url
         for (String arg : nonOptionArgs) {
