@@ -212,6 +212,7 @@ public class Main implements ApplicationRunner {
         verbose = true;
 
       if (args.getOptionNames().contains("version")) {
+        
         String version = "version";
         BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
         if (buildProperties != null) {
@@ -220,6 +221,7 @@ public class Main implements ApplicationRunner {
           // log(entry.getKey(), entry.getValue());
         }
         System.out.println(version);
+      
       } else {
 
         nonOptionArgs.addAll(args.getNonOptionArgs());
@@ -306,7 +308,7 @@ public class Main implements ApplicationRunner {
 
         System.out.println(xbuild);
 
-        if (scripts.size()>0) {
+        if (scripts.size() > 0) {
           // run xbuildfile
           if (new File(workTree().toFile(), "xbuildfile").exists())
             Posix.run(workTree(), env, "./xbuildfile");
