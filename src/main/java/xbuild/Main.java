@@ -51,7 +51,7 @@ public class Main implements ApplicationRunner {
 
   public static void main(String[] args) throws Exception {
     // args = new String[]{"asdf"};
-    // args = new String[]{"git@github.com:rrizun/xbuild-java.git"};
+    // args = new String[]{"git@github.com:xbuild-jar/xbuild-jar.git"};
     SpringApplication.run(Main.class, args);
   }
 
