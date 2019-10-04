@@ -103,8 +103,8 @@ public class Main implements ApplicationRunner {
   private final List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList();
 
   private Git privateGit;
-  private String privateBranch; // e.g., "master"
-  private BiMap<String, RevCommit> privateCommitMap;
+  // private String branch; // e.g., "master"
+  // private BiMap<String, RevCommit> privateCommitMap;
   private String number;
   private RevCommit commit;
   private final List<String> scripts = Lists.newArrayList();
@@ -152,24 +152,23 @@ public class Main implements ApplicationRunner {
         })
         ;
     privateGit = cloneCommand.call();
-    setBranch(null);
   }
 
-  // lazy
-  private String branch() throws Exception {
-    if (privateBranch == null)
-      privateBranch = git().getRepository().getBranch();
-    return privateBranch;
-  }
+  // // lazy
+  // private String branch() throws Exception {
+  //   if (privateBranch == null)
+  //     privateBranch = git().getRepository().getBranch();
+  //   return privateBranch;
+  // }
 
-  private void setBranch(String branch) throws Exception {
-    privateBranch = branch;
-    privateCommitMap = null;
-    number = null;
-    commit = null;
-    scripts.clear();
-    workTree = null;
-  }
+  // private void setBranch(String branch) throws Exception {
+  //   privateBranch = branch;
+  //   privateCommitMap = null;
+  //   number = null;
+  //   commit = null;
+  //   scripts.clear();
+  //   workTree = null;
+  // }
 
   // lazy
   private Path workTree() throws Exception {
@@ -193,13 +192,13 @@ public class Main implements ApplicationRunner {
     return workTree;
   }
 
-  // lazy
-  private BiMap<String, RevCommit> commitMap() throws Exception {
-    if (privateCommitMap == null) {
-      privateCommitMap = walkFirstParent(git().getRepository(), branch());
-    }
-    return privateCommitMap;
-  }
+  // // lazy
+  // private BiMap<String, RevCommit> commitMap() throws Exception {
+  //   if (privateCommitMap == null) {
+  //     privateCommitMap = walkFirstParent(git().getRepository(), branch);
+  //   }
+  //   return privateCommitMap;
+  // }
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
@@ -236,18 +235,21 @@ public class Main implements ApplicationRunner {
         }
 
         // branch
+        String branch = git().getRepository().getBranch();
         for (String arg : nonOptionArgs) {
           Ref ref = git().getRepository().findRef(arg);
           if (ref != null) {
             log("branch", arg);
-            setBranch(arg);
+            branch = arg;
             nonOptionArgs.remove(arg);
           }
         }
 
+        BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
+
         // number
         for (String arg : nonOptionArgs) {
-          if (commitMap().containsKey(arg)) {
+          if (commitMap.containsKey(arg)) {
             log("number", arg);
             number = arg;
             nonOptionArgs.remove(arg);
@@ -268,13 +270,13 @@ public class Main implements ApplicationRunner {
         // resolve number and commit
 
         if (number != null) // explicit number?
-          commit = Objects.requireNonNull(commitMap().get(number), String.format("bad number: %s", number));
+          commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
         else if (commit != null) // explicit commit?
-          number = Objects.requireNonNull(commitMap().inverse().get(commit), String.format("bad branch/commit: %s/%s", branch(), commit.name()));
+          number = Objects.requireNonNull(commitMap.inverse().get(commit), String.format("bad branch/commit: %s/%s", branch, commit.name()));
         else {
           // latest number and commit
-          number = latest(commitMap().keySet());
-          commit = Objects.requireNonNull(commitMap().get(number), String.format("bad number: %s", number));
+          number = latest(commitMap.keySet());
+          commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
         }
 
         // script
@@ -292,12 +294,12 @@ public class Main implements ApplicationRunner {
         if (nonOptionArgs.size()>0)
           throw new Exception("bad arg(s):"+nonOptionArgs.toString());
 
-        String xbuild = String.format("%s-%s-%s", branch(), number, commit.abbreviate(7).name());
+        String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
         String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
         Map<String, String> env = Maps.newTreeMap();
         env.put("XBUILD", xbuild); // "xbuild is running"
-        env.put("XBUILD_BRANCH", branch());
+        env.put("XBUILD_BRANCH", branch);
         env.put("XBUILD_NUMBER", number);
         env.put("XBUILD_COMMIT", commit.name());
         env.put("XBUILD_COMMITTIME", commitTime);
