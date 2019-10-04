@@ -177,8 +177,6 @@ public class Main implements ApplicationRunner {
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
-    List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
-
     try {
 
       if (args.getOptionNames().contains("silent"))
@@ -191,6 +189,8 @@ public class Main implements ApplicationRunner {
         buildProperties.ifPresent((props)->{System.out.println(props.getVersion());});
       
       } else {
+
+        List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
 
         // url
         for (String arg : nonOptionArgs) {
