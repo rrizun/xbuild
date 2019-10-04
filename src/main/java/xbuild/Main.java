@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.collect.BiMap;
@@ -59,9 +60,11 @@ public class Main implements ApplicationRunner {
   }
 
   private final ApplicationContext context;
+  private final Optional<BuildProperties> buildProperties;
 
-  public Main(ApplicationContext context) {
+  public Main(ApplicationContext context, Optional<BuildProperties> buildProperties) {
     this.context = context;
+    this.buildProperties = buildProperties;
     // BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
     // if (buildProperties != null) {
     //   log("xbuild", buildProperties.getVersion());
@@ -187,14 +190,7 @@ public class Main implements ApplicationRunner {
 
       if (args.getOptionNames().contains("version")) {
         
-        String version = "version";
-        BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-        if (buildProperties != null) {
-          version = buildProperties.getVersion();
-          // for (BuildProperties.Entry entry : buildProperties)
-          // log(entry.getKey(), entry.getValue());
-        }
-        System.out.println(version);
+        buildProperties.ifPresent((props)->{System.out.println(props.getVersion());});
       
       } else {
 
