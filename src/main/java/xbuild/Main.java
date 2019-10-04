@@ -188,12 +188,12 @@ public class Main implements ApplicationRunner {
       if (args.getOptionNames().contains("verbose"))
         verbose = true;
 
+      buildProperties.ifPresent((props) -> {
+        System.err.println(String.format("xbuild %s", props.getVersion()));
+      });
+  
       if (args.getOptionNames().contains("version")) {
         
-        buildProperties.ifPresent((props) -> {
-          log("xbuild", props.getVersion());
-        });
-  
       } else {
 
         List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
