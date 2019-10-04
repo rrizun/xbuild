@@ -14,4 +14,4 @@ echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${xbuildpropertiesfile?}
 gradle bootJar
 # pip install
 sed s/VERSION/0.9.${XBUILD_NUMBER?}/ setup.py.in > setup.py
-zip xbuild.jar.zip setup.py xbuild.jar
+zip xbuild-jar.zip setup.py xbuild.jar
