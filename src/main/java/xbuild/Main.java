@@ -260,7 +260,7 @@ public class Main implements ApplicationRunner {
       String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
       String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
 
-      Map<String, String> env = Maps.newHashMap();
+      Map<String, String> env = Maps.newTreeMap();
       env.put("XBUILD", xbuild); // "xbuild is running"
       env.put("XBUILD_BRANCH", branch);
       env.put("XBUILD_NUMBER", number);
