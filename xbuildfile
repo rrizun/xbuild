@@ -1,17 +1,9 @@
 #!/bin/sh -ex
+version="${XBUILD?}"
 # write gradle.properties
-echo "version=${XBUILD?}" > gradle.properties
-# # write banner.txt
-# cowsay "${XBUILD?}" > src/main/resources/banner.txt
-# write proprietary xbuild.properties
-xbuildpropertiesfile="src/main/resources/xbuild.properties"
-echo "xbuild=${XBUILD?}" > ${xbuildpropertiesfile?}
-echo "xbuild.branch=${XBUILD_BRANCH?}" >> ${xbuildpropertiesfile?}
-echo "xbuild.number=${XBUILD_NUMBER?}" >> ${xbuildpropertiesfile?}
-echo "xbuild.commit=${XBUILD_COMMIT?}" >> ${xbuildpropertiesfile?}
-echo "xbuild.committime=${XBUILD_COMMITTIME?}" >> ${xbuildpropertiesfile?}
+echo "version=${version?}" > gradle.properties
 # gradle
 gradle bootJar
-# pip install
-sed s/VERSION/0.9.${XBUILD_NUMBER?}/ setup.py.in > setup.py
+# for pip install
+sed s/VERSION/${version?}/ setup.py.in > setup.py
 zip xbuild-jar.zip setup.py xbuild.jar
