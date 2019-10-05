@@ -1,9 +1,9 @@
 package xbuild;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -154,17 +154,37 @@ public class Main implements ApplicationRunner {
     if (archive == null) {
       archive = Files.createTempDirectory("xbuild");
 
-      log("archive", archive);
-
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-      git().archive()
-        .setFormat("tar")
-        .setOutputStream(baos)
-        .setTree(commit)
-        .call();
-
-      untar(new ByteArrayInputStream(baos.toByteArray()), archive);
+      final PipedOutputStream out = new PipedOutputStream();
+      try {
+        final PipedInputStream in = new PipedInputStream(out);
+        try {
+          //
+          new Thread(() -> {
+            try {
+              log("archive", archive);
+              git()
+                  //
+                  .archive()
+                  //
+                  .setFormat("tar")
+                  //
+                  .setOutputStream(out)
+                  //
+                  .setTree(commit)
+                  //
+                  .call();
+            } catch (Exception e) {
+              throw new RuntimeException(e);
+            }
+          }).start();
+          //
+          untar(in, archive);
+        } finally {
+          in.close();
+        }
+      } finally {
+        out.close();
+      }
     }
     return archive;
   }
