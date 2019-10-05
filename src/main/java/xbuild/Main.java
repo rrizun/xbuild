@@ -221,12 +221,14 @@ public class Main implements ApplicationRunner {
 
       // commit?
       for (String arg : nonOptionArgs) {
-        ObjectId objectId = git().getRepository().resolve(arg);
-        if (objectId != null) {
-          log("commit[1]", arg);
-          commit = git().getRepository().parseCommit(objectId);
-          log("commit[2]", commit.name());
-          nonOptionArgs.remove(arg);
+        if (Repository.isValidRefName(arg)) {
+          ObjectId objectId = git().getRepository().resolve(arg);
+          if (objectId != null) {
+            log("commit[1]", arg);
+            commit = git().getRepository().parseCommit(objectId);
+            log("commit[2]", commit.name());
+            nonOptionArgs.remove(arg);
+          }
         }
       }
 
@@ -271,18 +273,18 @@ public class Main implements ApplicationRunner {
       for (Map.Entry<String, String> entry : env.entrySet())
         System.out.println(String.format("export %s=\"%s\"", entry.getKey(), entry.getValue()));
 
-      if (scripts.size() > 0) {
-        // run xbuildfile
-        if (new File(archive().toFile(), "xbuildfile").exists())
-          Posix.run(archive(), env, "./xbuildfile");
-        else if (new File(archive().toFile(), ".xbuild").exists())
-          Posix.run(archive(), env, "./.xbuild"); // legacy
+        if (scripts.size() > 0) {
+          // run xbuildfile
+          if (new File(archive().toFile(), "xbuildfile").exists())
+            Posix.run(archive(), env, "./xbuildfile");
+          else if (new File(archive().toFile(), ".xbuild").exists())
+            Posix.run(archive(), env, "./.xbuild"); // legacy
+    
+          // run deploy scripts, e.g., xdeploy-dev
+          for (String script : scripts)
+            Posix.run(archive(), env, String.format("./%s", script));
+        }
   
-        // run deploy scripts, e.g., xdeploy-dev
-        for (String script : scripts)
-          Posix.run(archive(), env, String.format("./%s", script));
-      }
-
     } catch (Exception e) {
       System.err.println(e.toString());
       if (debug)
