@@ -153,12 +153,8 @@ public class Main implements ApplicationRunner {
   private Path archive() throws Exception {
     if (archive == null) {
       archive = Files.createTempDirectory("xbuild");
-
-      final PipedOutputStream out = new PipedOutputStream();
-      try {
-        final PipedInputStream in = new PipedInputStream(out);
-        try {
-          //
+      try (PipedInputStream in = new PipedInputStream()) {
+        try (PipedOutputStream out = new PipedOutputStream(in)) {
           new Thread(() -> {
             try {
               log("archive", archive);
@@ -177,13 +173,8 @@ public class Main implements ApplicationRunner {
               throw new RuntimeException(e);
             }
           }).start();
-          //
           untar(in, archive);
-        } finally {
-          in.close();
         }
-      } finally {
-        out.close();
       }
     }
     return archive;
