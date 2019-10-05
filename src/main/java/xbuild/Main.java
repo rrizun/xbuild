@@ -43,14 +43,14 @@ import org.springframework.context.ApplicationContext;
 @SpringBootApplication // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
 public class Main implements ApplicationRunner {
 
+  static {
+    ArchiveFormats.registerAll();
+  }
+
   public static void main(String[] args) throws Exception {
     // args = new String[]{"asdf"};
     // args = new String[]{"git@github.com:xbuild-jar/xbuild-jar.git"};
     SpringApplication.run(Main.class, args);
-  }
-
-  static {
-    ArchiveFormats.registerAll();
   }
 
   private final ApplicationContext context;
@@ -59,12 +59,6 @@ public class Main implements ApplicationRunner {
   public Main(ApplicationContext context, Optional<BuildProperties> buildProperties) {
     this.context = context;
     this.buildProperties = buildProperties;
-    // BuildProperties buildProperties = context.getBeanProvider(BuildProperties.class).getIfAvailable();
-    // if (buildProperties != null) {
-    //   log("xbuild", buildProperties.getVersion());
-    //   // for (BuildProperties.Entry entry : buildProperties)
-    //   //   log(entry.getKey(), entry.getValue());
-    // }
 }
 
   private File getGitDir(ApplicationArguments args) {
@@ -74,6 +68,66 @@ public class Main implements ApplicationRunner {
         return new File(value);
     }
     return null;
+  }
+
+  private boolean debug;
+  private boolean verbose = true;
+
+  private File gitDir;
+  private Git privateGit;
+  // private String branch;
+  // private final BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
+  private String number;
+  private RevCommit commit;
+  private Path archivePath;
+  private final List<String> scripts = Lists.newArrayList();
+
+  // lazy
+  private Git git() throws Exception {
+    if (privateGit == null) {
+      Repository repository = new FileRepositoryBuilder()
+      .setGitDir(gitDir) // --git-dir if supplied, no-op if null
+      .readEnvironment() // scan environment GIT_* variables
+      .findGitDir() // scan up the file system tree
+      .build();
+      privateGit = new Git(repository);
+    }
+    return privateGit;
+  }
+
+  private void setGit(String url) throws Exception {
+    Path tempDirectory = Files.createTempDirectory("xbuild");
+    log(tempDirectory);
+    CloneCommand cloneCommand = Git.cloneRepository()
+        //
+        .setBare(true)
+        //
+        .setDirectory(tempDirectory.toFile())
+        //
+        .setURI(url)
+        //
+        .setProgressMonitor(new ProgressMonitor() {
+          @Override
+          public void start(int totalTasks) {
+          }
+          @Override
+          public void beginTask(String title, int totalWork) {
+            log(title, totalWork);
+          }
+          @Override
+          public void update(int completed) {
+          }
+          @Override
+          public void endTask() {
+          }
+          @Override
+          public boolean isCancelled() {
+            return false;
+          }
+        })
+    //
+    ;
+    privateGit = cloneCommand.call();
   }
 
   // git rev-list master --count --first-parent
@@ -96,68 +150,15 @@ public class Main implements ApplicationRunner {
     return reverse(commitMap);
   }
 
-  private boolean debug;
-  private boolean verbose = true;
-
-  private Git privateGit;
-  private String number;
-  private RevCommit commit;
-  private final List<String> scripts = Lists.newArrayList();
-  private Path archive;
-
-  // lazy
-  private Git git() throws Exception {
-    if (privateGit == null) {
-      Repository repository = new FileRepositoryBuilder()
-      // .setGitDir(getGitDir(args)) // --git-dir if supplied, no-op if null
-      .readEnvironment() // scan environment GIT_* variables
-      .findGitDir() // scan up the file system tree
-      // .setBare()
-      .build();
-      privateGit = new Git(repository);
-    }
-    return privateGit;
-  }
-
-  private void setGit(String url) throws Exception {
-    Path tempDirectory = Files.createTempDirectory("xbuild");
-    log(tempDirectory);
-    CloneCommand cloneCommand = Git.cloneRepository()
-        .setBare(true)
-        .setDirectory(tempDirectory.toFile())
-        .setURI(url)
-        .setProgressMonitor(new ProgressMonitor() {
-          @Override
-          public void start(int totalTasks) {
-          }
-          @Override
-          public void beginTask(String title, int totalWork) {
-            log(title, totalWork);
-          }
-          @Override
-          public void update(int completed) {
-          }
-          @Override
-          public void endTask() {
-          }
-          @Override
-          public boolean isCancelled() {
-            return false;
-          }
-        })
-        ;
-    privateGit = cloneCommand.call();
-  }
-
   // lazy
   private Path archive() throws Exception {
-    if (archive == null) {
-      archive = Files.createTempDirectory("xbuild");
+    if (archivePath == null) {
+      archivePath = Files.createTempDirectory("xbuild");
       try (PipedInputStream in = new PipedInputStream()) {
         try (PipedOutputStream out = new PipedOutputStream(in)) {
           new Thread(() -> {
             try {
-              log("archive", archive);
+              log("archive", archivePath);
               git()
                   //
                   .archive()
@@ -173,17 +174,20 @@ public class Main implements ApplicationRunner {
               throw new RuntimeException(e);
             }
           }).start();
-          untar(in, archive);
+          untar(in, archivePath);
         }
       }
     }
-    return archive;
+    return archivePath;
   }
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
 
     try {
+
+      // --git-dir
+      gitDir = getGitDir(args);
 
       if (args.getOptionNames().contains("debug"))
         debug = true;
