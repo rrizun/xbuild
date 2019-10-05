@@ -1,16 +1,14 @@
 plugins {
-	id "org.springframework.boot" version "2.1.5.RELEASE"
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
-
-apply plugin: "java"
-apply plugin: "io.spring.dependency-management"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
 	jcenter()
-	mavenCentral()
+	// mavenCentral()
     // maven { url "https://repo.spring.io/release" }
 }
 
@@ -20,30 +18,13 @@ dependencies {
 	implementation "org.apache.commons:commons-compress:+"
 	implementation "org.eclipse.jgit:org.eclipse.jgit:+"
 	implementation "org.eclipse.jgit:org.eclipse.jgit.archive:+"
-	implementation "org.springframework.boot:spring-boot-starter"
-    // implementation "org.springframework.cloud:spring-cloud-aws-context:+"
-	testImplementation('org.junit.jupiter:junit-jupiter:+')
 }
 
-springBoot {
-	buildInfo()
-}
-
-bootJar {
-	archiveName="xbuild.jar"
-	destinationDir = file(".")
-	launchScript {
-		script = file("custom.script")
-	}
-}
-
-//configurations {
-//    all*.exclude module : 'spring-boot-starter-logging'
-//}
-
-test {
-	testLogging {
-		// events "passed", "skipped", "failed"
-	}
-	useJUnitPlatform()
+jar {
+  manifest {
+    attributes(
+      'Main-Class': 'xbuild.Main',
+      // 'Class-Path': configurations.runtimeClasspath.collect { it.getName() }.join(' '),
+    )
+  }
 }

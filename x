@@ -1,3 +1,3 @@
-#!/bin/sh
-gradle bootJar
-./xbuild.jar "$@"
+#!/bin/sh -ex
+gradle jar
+java -jar build/libs/xbuild-jar.jar "$@"

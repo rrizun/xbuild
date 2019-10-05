@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.collect.BiMap;
@@ -30,43 +29,26 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
 
 /**
  * xbuild
  */
-@SpringBootApplication // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle
-public class Main implements ApplicationRunner {
+public class Main {
 
   static {
     ArchiveFormats.registerAll();
   }
 
-  public static void main(String[] args) throws Exception {
-    // args = new String[]{"asdf"};
-    // args = new String[]{"git@github.com:xbuild-jar/xbuild-jar.git"};
-    SpringApplication.run(Main.class, args);
+  public static void main(String... args) throws Exception {
+    new Main(args);
   }
 
-  private final ApplicationContext context;
-  private final Optional<BuildProperties> buildProperties;
-
-  public Main(ApplicationContext context, Optional<BuildProperties> buildProperties) {
-    this.context = context;
-    this.buildProperties = buildProperties;
-}
-
-  private File getGitDir(ApplicationArguments args) {
-    List<String> values = args.getOptionValues("git-dir");
-    if (values != null) {
-      for (String value : values)
-        return new File(value);
-    }
+  private File getGitDir(String... args) {
+    // List<String> values = args.getOptionValues("git-dir");
+    // if (values != null) {
+    //   for (String value : values)
+    //     return new File(value);
+    // }
     return null;
   }
 
@@ -181,27 +163,27 @@ public class Main implements ApplicationRunner {
     return archivePath;
   }
 
-  @Override
-  public void run(ApplicationArguments args) throws Exception {
+
+  public Main(String... args) throws Exception {
 
     try {
 
       // --git-dir
       gitDir = getGitDir(args);
 
-      if (args.getOptionNames().contains("debug"))
-        debug = true;
+      // if (args.getOptionNames().contains("debug"))
+      //   debug = true;
 
-      if (args.getOptionNames().contains("silent"))
-        verbose = false;
-      if (args.getOptionNames().contains("verbose"))
-        verbose = true;
+      // if (args.getOptionNames().contains("silent"))
+      //   verbose = false;
+      // if (args.getOptionNames().contains("verbose"))
+      //   verbose = true;
 
-      buildProperties.ifPresent((props) -> {
-        System.err.println(String.format("xbuild[%s]", props.getVersion()));
-      });
+      // buildProperties.ifPresent((props) -> {
+      //   System.err.println(String.format("xbuild[%s]", props.getVersion()));
+      // });
   
-      List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
+      List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(Lists.newArrayList(args));
 
       // url?
       for (String arg : nonOptionArgs) {
@@ -346,7 +328,7 @@ public class Main implements ApplicationRunner {
   }
 
   private void exit(int exitCode) {
-    System.exit(SpringApplication.exit(context, () -> exitCode));
+    System.exit(exitCode);
   }
 
 	private void log(Object... args) {
