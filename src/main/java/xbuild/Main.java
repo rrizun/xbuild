@@ -23,6 +23,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.archive.ArchiveFormats;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ProgressMonitor;
 import org.eclipse.jgit.lib.Ref;
@@ -221,6 +222,18 @@ public class Main implements ApplicationRunner {
           branch = arg;
           nonOptionArgs.remove(arg);
         }
+      }
+
+      BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(git().getRepository(), branch);
+      if (trackingStatus != null) {
+        String remoteName = git().getRepository().getRemoteName(trackingStatus.getRemoteTrackingBranch());
+        String remoteNameAndBranch = String.format("%s/%s", remoteName, branch);
+        // "Your branch is ahead 'origin/master' by 1 commit."
+        if (trackingStatus.getAheadCount()>0)
+          log(String.format("### %s is ahead of %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
+        // "Your branch is behind 'origin/master' by 2 commits.""
+        if (trackingStatus.getBehindCount()>0)
+          log(String.format("### %s is behind of %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
       }
 
       BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
