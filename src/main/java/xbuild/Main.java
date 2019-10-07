@@ -58,7 +58,7 @@ public class Main implements ApplicationRunner {
   public Main(ApplicationContext context, Optional<BuildProperties> buildProperties) {
     this.context = context;
     this.buildProperties = buildProperties;
-}
+  }
 
   private File getGitDir(ApplicationArguments args) {
     List<String> values = args.getOptionValues("git-dir");
@@ -299,17 +299,17 @@ public class Main implements ApplicationRunner {
       for (Map.Entry<String, String> entry : env.entrySet())
         System.out.println(String.format("export %s=\"%s\"", entry.getKey(), entry.getValue()));
 
-        if (scripts.size() > 0) {
-          // run xbuildfile
-          if (new File(archive().toFile(), "xbuildfile").exists())
-            Posix.run(archive(), env, "./xbuildfile");
-          else if (new File(archive().toFile(), ".xbuild").exists())
-            Posix.run(archive(), env, "./.xbuild"); // legacy
-    
-          // run deploy scripts, e.g., xdeploy-dev
-          for (String script : scripts)
-            Posix.run(archive(), env, String.format("./%s", script));
-        }
+      if (scripts.size() > 0) {
+        // run xbuildfile
+        if (new File(archive().toFile(), "xbuildfile").exists())
+          Posix.run(archive(), env, "./xbuildfile");
+        else if (new File(archive().toFile(), ".xbuild").exists())
+          Posix.run(archive(), env, "./.xbuild"); // legacy
+
+        // run deploy scripts, e.g., xdeploy-dev
+        for (String script : scripts)
+          Posix.run(archive(), env, String.format("./%s", script));
+      }
   
     } catch (Exception e) {
       System.err.println(e.toString());
