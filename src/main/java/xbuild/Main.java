@@ -223,10 +223,10 @@ public class Main implements ApplicationRunner {
         String remoteNameAndBranch = String.format("%s/%s", remoteName, branch);
         // "Your branch is ahead 'origin/master' by 1 commit."
         if (trackingStatus.getAheadCount()>0)
-          log(String.format("### %s is ahead of %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
+          log(String.format("### %s is ahead %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
         // "Your branch is behind 'origin/master' by 2 commits.""
         if (trackingStatus.getBehindCount()>0)
-          log(String.format("### %s is behind of %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
+          log(String.format("### %s is behind %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
       }
 
       BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
