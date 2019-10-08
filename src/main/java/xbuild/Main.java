@@ -20,7 +20,6 @@ import com.google.common.collect.Maps;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.archive.ArchiveFormats;
 import org.eclipse.jgit.lib.BranchTrackingStatus;
@@ -49,6 +48,8 @@ public class Main implements ApplicationRunner {
   }
 
   public static void main(String[] args) throws Exception {
+    // args = new String[]{"2add6c"};
+    // args = new String[]{"git@github.com:xbuild-jar/xbuild-jar.git"};
     SpringApplication.run(Main.class, args);
   }
 
@@ -85,23 +86,25 @@ public class Main implements ApplicationRunner {
   private Git git() throws Exception {
     if (privateGit == null) {
       Repository repository = new FileRepositoryBuilder()
-      .setGitDir(gitDir) // --git-dir if supplied, no-op if null
-      .readEnvironment() // scan environment GIT_* variables
-      .findGitDir() // scan up the file system tree
-      .build();
+          // --git-dir if supplied, no-op if null
+          .setGitDir(gitDir)
+          // scan environment GIT_* variables
+          .readEnvironment()
+          // scan up the file system tree
+          .findGitDir()
+          //
+          .build();
       privateGit = new Git(repository);
     }
     return privateGit;
   }
 
   private void setGit(String url) throws Exception {
-    Path tempDirectory = Files.createTempDirectory("xbuild");
-    log(tempDirectory);
-    CloneCommand cloneCommand = Git.cloneRepository()
+    privateGit = Git.cloneRepository()
         //
         .setBare(true)
         //
-        .setDirectory(tempDirectory.toFile())
+        .setDirectory(Files.createTempDirectory("xbuild").toFile())
         //
         .setURI(url)
         //
@@ -124,13 +127,15 @@ public class Main implements ApplicationRunner {
             return false;
           }
         })
-    //
-    ;
-    privateGit = cloneCommand.call();
+        //
+        .call();
+
+    log(privateGit.getRepository().getDirectory());
   }
 
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
+  // https://stackoverflow.com/questions/33038224/how-to-call-git-show-first-parent-in-jgit
   private BiMap<String, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
     ObjectId objectId = repo.resolve(branch);
     BiMap<String, RevCommit> commitMap = HashBiMap.create();
@@ -147,6 +152,13 @@ public class Main implements ApplicationRunner {
       }
     }
     return reverse(commitMap);
+  }
+
+  private BiMap<String, RevCommit> reverse(BiMap<String, RevCommit> input) {
+    BiMap<String, RevCommit> output = HashBiMap.create();
+    for (Map.Entry<String, RevCommit> entry : input.entrySet())
+      output.put("" + (input.size() - Integer.parseInt(entry.getKey())), entry.getValue());
+    return output;
   }
 
   // lazy
@@ -327,13 +339,6 @@ public class Main implements ApplicationRunner {
     return ""+number;
   }
   
-  private BiMap<String, RevCommit> reverse(BiMap<String, RevCommit> input) {
-    BiMap<String, RevCommit> output = HashBiMap.create();
-    for (Map.Entry<String, RevCommit> entry : input.entrySet())
-      output.put(""+(input.size()-Integer.parseInt(entry.getKey())), entry.getValue());
-    return output;
-  }
-
   /**
 	 * untar
 	 * 
