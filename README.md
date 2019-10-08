@@ -17,3 +17,5 @@ pip3 install https://github.com/xbuild-source/xbuild/releases/latest/download/xb
 </pre>
 
 try not to use sudo
+
+mac: missing pip? sudo easy_install pip
