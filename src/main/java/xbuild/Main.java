@@ -57,7 +57,7 @@ public class Main implements ApplicationRunner {
   private File gitDir;
   private Git privateGit;
   // private String branch;
-  // private final BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
+  // private final BiMap<String/*number*/, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
   private String number;
   private RevCommit commit;
   private Path archivePath;
@@ -117,12 +117,11 @@ public class Main implements ApplicationRunner {
   // git rev-list master --count --first-parent
   // https://stackoverflow.com/questions/14895123/auto-version-numbering-your-android-app-using-git-and-eclipse/20584169#20584169
   // https://stackoverflow.com/questions/33038224/how-to-call-git-show-first-parent-in-jgit
-  private BiMap<String, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
-    ObjectId objectId = repo.resolve(branch);
-    BiMap<String, RevCommit> commitMap = HashBiMap.create();
+  private BiMap<String/*number*/, RevCommit> walkFirstParent(Repository repo, String branch) throws Exception {
+    BiMap<String/*number*/, RevCommit> commitMap = HashBiMap.create();
     try (RevWalk walk = new RevWalk(repo)) {
       int count = -1;
-      RevCommit head = walk.parseCommit(objectId);
+      RevCommit head = walk.parseCommit(repo.resolve(branch));
       while (head != null) {
         ++count;
         commitMap.put(""+count, head);
@@ -135,9 +134,9 @@ public class Main implements ApplicationRunner {
     return reverse(commitMap);
   }
 
-  private BiMap<String, RevCommit> reverse(BiMap<String, RevCommit> input) {
-    BiMap<String, RevCommit> output = HashBiMap.create();
-    for (Map.Entry<String, RevCommit> entry : input.entrySet())
+  private BiMap<String/*number*/, RevCommit> reverse(BiMap<String/*number*/, RevCommit> input) {
+    BiMap<String/*number*/, RevCommit> output = HashBiMap.create();
+    for (Map.Entry<String/*number*/, RevCommit> entry : input.entrySet())
       output.put("" + (input.size() - Integer.parseInt(entry.getKey())), entry.getValue());
     return output;
   }
@@ -229,7 +228,7 @@ public class Main implements ApplicationRunner {
           log(String.format("### %s is behind %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
       }
 
-      BiMap<String, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
+      BiMap<String/*number*/, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
 
       // number?
       for (String arg : nonOptionArgs) {
