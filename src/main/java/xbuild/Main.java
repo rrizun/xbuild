@@ -1,41 +1,22 @@
 package xbuild;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.io.*;
+import java.nio.file.*;
+import java.time.*;
+import java.util.*;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import org.apache.commons.compress.archivers.tar.*;
+import org.eclipse.jgit.api.*;
+import org.eclipse.jgit.archive.*;
+import org.eclipse.jgit.lib.*;
+import org.eclipse.jgit.revwalk.*;
+import org.eclipse.jgit.storage.file.*;
+import org.springframework.boot.*;
+import org.springframework.boot.autoconfigure.*;
+import org.springframework.boot.info.*;
+import org.springframework.context.*;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.archive.ArchiveFormats;
-import org.eclipse.jgit.lib.BranchTrackingStatus;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.ProgressMonitor;
-import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.ApplicationContext;
+import com.google.common.collect.*;
 
 /**
  * xbuild
@@ -208,9 +189,11 @@ public class Main implements ApplicationRunner {
       if (args.getOptionNames().contains("verbose"))
         verbose = true;
 
-      buildProperties.ifPresent((props) -> {
-        System.err.println(String.format("xbuild[%s]", props.getVersion()));
-      });
+      if (args.getOptionNames().contains("version")) {
+        buildProperties.ifPresent((props) -> {
+          System.err.println(String.format("xbuild[%s]", props.getVersion()));
+        });
+      }
   
       List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
 
