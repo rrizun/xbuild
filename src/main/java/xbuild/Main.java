@@ -296,13 +296,13 @@ public class Main implements ApplicationRunner {
       if (scripts.size() > 0) {
         // run xbuildfile
         if (new File(archive().toFile(), "xbuildfile").exists())
-          Posix.run(archive(), env, "./xbuildfile");
+          Posix.run(archive(), env, ImmutableList.of("./xbuildfile"));
         else if (new File(archive().toFile(), ".xbuild").exists())
-          Posix.run(archive(), env, "./.xbuild"); // legacy
+          Posix.run(archive(), env, ImmutableList.of("./.xbuild")); // legacy
 
         // run deploy scripts, e.g., xdeploy-dev
         for (String script : scripts)
-          Posix.run(archive(), env, String.format("./%s", script));
+          Posix.run(archive(), env, ImmutableList.of(String.format("./%s", script)));
       }
   
     } catch (Exception e) {

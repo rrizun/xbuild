@@ -4,8 +4,6 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.*;
 
-import com.google.common.collect.*;
-
 public class Posix {
   /**
    * run
@@ -15,18 +13,19 @@ public class Posix {
    * @param command
    * @throws Exception
    */
-  public static void run(Path cwd, Map<String, String> env, String... command) throws Exception {
+  public static void run(Path cwd, Map<String, String> env, List<String> command) throws Exception {
     log("----------------------------------------------------------------------");
-    log("run", Lists.newArrayList(command));
+    log("run", command);
     log("----------------------------------------------------------------------");
 
-    ProcessBuilder builder = new ProcessBuilder(command);
-      builder.directory(cwd.toFile());
-      builder.environment().putAll(env);
-      builder.inheritIO();
+    final ProcessBuilder builder = new ProcessBuilder(command);
+    
+    builder.directory(cwd.toFile());
+    builder.environment().putAll(env);
+    builder.inheritIO();
 
     if (builder.start().waitFor() != 0)
-      throw new Exception(cwd.toString()+env.toString()+command.toString());
+      throw new Exception("" + cwd + env + command);
   }
 
   /**
