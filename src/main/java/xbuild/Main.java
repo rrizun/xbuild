@@ -211,7 +211,7 @@ public class Main implements ApplicationRunner {
         Ref ref = git().getRepository().findRef(arg);
         if (ref != null) {
           log("branch", arg);
-          branch = arg;
+          branch = Repository.shortenRefName(ref.getName());
           nonOptionArgs.remove(arg);
         }
       }
