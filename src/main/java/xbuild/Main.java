@@ -190,119 +190,121 @@ public class Main implements ApplicationRunner {
 
       if (args.getOptionNames().contains("version")) {
         buildProperties.ifPresent((props) -> {
-          System.err.println(String.format("xbuild[%s]", props.getVersion()));
+          System.out.println(String.format("xbuild[%s]", props.getVersion()));
         });
-      }
+      } else {
+
+        List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
+
+        // url?
+        for (String arg : nonOptionArgs) {
+          if (arg.contains(":")) {
+            log("url", arg);
+            setGit(arg);
+            nonOptionArgs.remove(arg);
+          }
+        }
   
-      List<String> nonOptionArgs = Lists.newCopyOnWriteArrayList(args.getNonOptionArgs());
-
-      // url?
-      for (String arg : nonOptionArgs) {
-        if (arg.contains(":")) {
-          log("url", arg);
-          setGit(arg);
-          nonOptionArgs.remove(arg);
-        }
-      }
-
-      // branch?
-      String branch = git().getRepository().getBranch();
-      for (String arg : nonOptionArgs) {
-        Ref ref = git().getRepository().findRef(arg);
-        if (ref != null) {
-          log("branch", arg);
-          branch = Repository.shortenRefName(ref.getName());
-          nonOptionArgs.remove(arg);
-        }
-      }
-
-      BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(git().getRepository(), branch);
-      if (trackingStatus != null) {
-        String remoteName = git().getRepository().getRemoteName(trackingStatus.getRemoteTrackingBranch());
-        String remoteNameAndBranch = String.format("%s/%s", remoteName, branch);
-        // "Your branch is ahead 'origin/master' by 1 commit."
-        if (trackingStatus.getAheadCount()>0)
-          log(String.format("### %s is ahead %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
-        // "Your branch is behind 'origin/master' by 2 commits.""
-        if (trackingStatus.getBehindCount()>0)
-          log(String.format("### %s is behind %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
-      }
-
-      BiMap<String/*number*/, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
-
-      // number?
-      for (String arg : nonOptionArgs) {
-        if (commitMap.containsKey(arg)) {
-          log("number", arg);
-          number = arg;
-          nonOptionArgs.remove(arg);
-        }
-      }
-
-      // commit?
-      for (String arg : nonOptionArgs) {
-        if (Repository.isValidRefName(arg)) {
-          ObjectId objectId = git().getRepository().resolve(arg);
-          if (objectId != null) {
-            log("commit[1]", arg);
-            commit = git().getRepository().parseCommit(objectId);
-            log("commit[2]", commit.name());
+        // branch?
+        String branch = git().getRepository().getBranch();
+        for (String arg : nonOptionArgs) {
+          Ref ref = git().getRepository().findRef(arg);
+          if (ref != null) {
+            log("branch", arg);
+            branch = Repository.shortenRefName(ref.getName());
             nonOptionArgs.remove(arg);
           }
         }
-      }
-
-      // resolve number and commit
-
-      if (number != null) // explicit number?
-        commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
-      else if (commit != null) // explicit commit?
-        number = Objects.requireNonNull(commitMap.inverse().get(commit), String.format("bad branch/commit: %s/%s", branch, commit.name()));
-      else {
-        // latest number and commit
-        number = latest(commitMap.keySet());
-        commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
-      }
-
-      // scripts?
-      for (String arg : nonOptionArgs) {
-        File file = new File(archive().toFile(), arg);
-        if (file.exists()) {
-          if (file.isFile()) {
-            log("script", arg);
-            scripts.add(arg);
+  
+        BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(git().getRepository(), branch);
+        if (trackingStatus != null) {
+          String remoteName = git().getRepository().getRemoteName(trackingStatus.getRemoteTrackingBranch());
+          String remoteNameAndBranch = String.format("%s/%s", remoteName, branch);
+          // "Your branch is ahead 'origin/master' by 1 commit."
+          if (trackingStatus.getAheadCount()>0)
+            log(String.format("### %s is ahead %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
+          // "Your branch is behind 'origin/master' by 2 commits.""
+          if (trackingStatus.getBehindCount()>0)
+            log(String.format("### %s is behind %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
+        }
+  
+        BiMap<String/*number*/, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
+  
+        // number?
+        for (String arg : nonOptionArgs) {
+          if (commitMap.containsKey(arg)) {
+            log("number", arg);
+            number = arg;
             nonOptionArgs.remove(arg);
           }
         }
-      }
-
-      if (nonOptionArgs.size()>0)
-        throw new Exception("bad arg(s):"+nonOptionArgs.toString());
-
-      String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
-      String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
-
-      Map<String, String> env = Maps.newTreeMap();
-      env.put("XBUILD", xbuild); // "xbuild is running"
-      env.put("XBUILD_BRANCH", branch);
-      env.put("XBUILD_NUMBER", number);
-      env.put("XBUILD_COMMIT", commit.name());
-      env.put("XBUILD_COMMITTIME", commitTime);
-      env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
-
-      for (Map.Entry<String, String> entry : env.entrySet())
-        System.out.println(String.format("export %s=\"%s\"", entry.getKey(), entry.getValue()));
-
-      if (scripts.size() > 0) {
-        // run xbuildfile
-        if (new File(archive().toFile(), "xbuildfile").exists())
-          Posix.run(archive(), env, ImmutableList.of("./xbuildfile"));
-        else if (new File(archive().toFile(), ".xbuild").exists())
-          Posix.run(archive(), env, ImmutableList.of("./.xbuild")); // legacy
-
-        // run deploy scripts, e.g., xdeploy-dev
-        for (String script : scripts)
-          Posix.run(archive(), env, ImmutableList.of(String.format("./%s", script)));
+  
+        // commit?
+        for (String arg : nonOptionArgs) {
+          if (Repository.isValidRefName(arg)) {
+            ObjectId objectId = git().getRepository().resolve(arg);
+            if (objectId != null) {
+              log("commit[1]", arg);
+              commit = git().getRepository().parseCommit(objectId);
+              log("commit[2]", commit.name());
+              nonOptionArgs.remove(arg);
+            }
+          }
+        }
+  
+        // resolve number and commit
+  
+        if (number != null) // explicit number?
+          commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
+        else if (commit != null) // explicit commit?
+          number = Objects.requireNonNull(commitMap.inverse().get(commit), String.format("bad branch/commit: %s/%s", branch, commit.name()));
+        else {
+          // latest number and commit
+          number = latest(commitMap.keySet());
+          commit = Objects.requireNonNull(commitMap.get(number), String.format("bad number: %s", number));
+        }
+  
+        // scripts?
+        for (String arg : nonOptionArgs) {
+          File file = new File(archive().toFile(), arg);
+          if (file.exists()) {
+            if (file.isFile()) {
+              log("script", arg);
+              scripts.add(arg);
+              nonOptionArgs.remove(arg);
+            }
+          }
+        }
+  
+        if (nonOptionArgs.size()>0)
+          throw new Exception("bad arg(s):"+nonOptionArgs.toString());
+  
+        String xbuild = String.format("%s-%s-%s", branch, number, commit.abbreviate(7).name());
+        String commitTime = Instant.ofEpochSecond(commit.getCommitTime()).toString();
+  
+        Map<String, String> env = Maps.newTreeMap();
+        env.put("XBUILD", xbuild); // "xbuild is running"
+        env.put("XBUILD_BRANCH", branch);
+        env.put("XBUILD_NUMBER", number);
+        env.put("XBUILD_COMMIT", commit.name());
+        env.put("XBUILD_COMMITTIME", commitTime);
+        env.put("XBUILD_DATETIME", commitTime); // ###LEGACY###
+  
+        for (Map.Entry<String, String> entry : env.entrySet())
+          System.out.println(String.format("export %s=\"%s\"", entry.getKey(), entry.getValue()));
+  
+        if (scripts.size() > 0) {
+          // run xbuildfile
+          if (new File(archive().toFile(), "xbuildfile").exists())
+            Posix.run(archive(), env, ImmutableList.of("./xbuildfile"));
+          else if (new File(archive().toFile(), ".xbuild").exists())
+            Posix.run(archive(), env, ImmutableList.of("./.xbuild")); // legacy
+  
+          // run deploy scripts, e.g., xdeploy-dev
+          for (String script : scripts)
+            Posix.run(archive(), env, ImmutableList.of(String.format("./%s", script)));
+        }
+  
       }
   
     } catch (Exception e) {
