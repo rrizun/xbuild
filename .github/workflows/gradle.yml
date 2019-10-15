@@ -13,3 +13,5 @@ jobs:
       with:
         java-version: 8
     - run: gradle build
+    - run: pip install https://github.com/xbuild-source/xbuild/releases/latest/download/xbuild-jar.zip
+    - run: xbuild.jar https://github.com/xbuild-source/xbuild.git
