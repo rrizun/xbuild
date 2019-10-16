@@ -218,14 +218,14 @@ public class Main implements ApplicationRunner {
   
         BranchTrackingStatus trackingStatus = BranchTrackingStatus.of(git().getRepository(), branch);
         if (trackingStatus != null) {
-          String remoteName = git().getRepository().getRemoteName(trackingStatus.getRemoteTrackingBranch());
-          String remoteNameAndBranch = String.format("%s/%s", remoteName, branch);
+          String localBranch = branch;
+          String remoteBranch = Repository.shortenRefName(trackingStatus.getRemoteTrackingBranch());
           // "Your branch is ahead 'origin/master' by 1 commit."
           if (trackingStatus.getAheadCount()>0)
-            log(String.format("### %s is ahead %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getAheadCount()));
+            log(String.format("### %s is ahead %s by %s commit(s)", localBranch, remoteBranch, trackingStatus.getAheadCount()));
           // "Your branch is behind 'origin/master' by 2 commits.""
           if (trackingStatus.getBehindCount()>0)
-            log(String.format("### %s is behind %s by %s commit(s)", branch, remoteNameAndBranch, trackingStatus.getBehindCount()));
+            log(String.format("### %s is behind %s by %s commit(s)", localBranch, remoteBranch, trackingStatus.getBehindCount()));
         }
   
         BiMap<String/*number*/, RevCommit> commitMap = walkFirstParent(git().getRepository(), branch);
