@@ -12,7 +12,7 @@ jobs:
     - uses: actions/setup-java@v1
       with:
         java-version: 8
-    - run: sudo apt-get install -y python3-setuptools
-    - run: pip3 install https://github.com/xbuild-source/xbuild/releases/latest/download/xbuild-jar.zip
+    - run: sudo apt-get install -y python-setuptools
+    - run: pip install https://github.com/xbuild-source/xbuild/releases/latest/download/xbuild-jar.zip
     - run: xbuild.jar https://github.com/xbuild-source/xbuild.git
     - run: gradle build
