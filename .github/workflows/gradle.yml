@@ -18,3 +18,5 @@ jobs:
     - run: pip3 install https://github.com/xbuild-source/xbuild/releases/latest/download/xbuild-jar.zip
     - run: eval $(xbuild.jar https://github.com/xbuild-source/xbuild.git)
     - run: xbuild.jar deploy-github
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
