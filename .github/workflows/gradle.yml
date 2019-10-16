@@ -15,7 +15,6 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: 3.7
-    - run: pip3 install https://github.com/xbuild-source/xbuild/releases/latest/download/xbuild-jar.zip
-    - run: ./run_github_actions_step.sh
+    - run: ./xbuild_action.sh
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
