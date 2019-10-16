@@ -1,9 +1,8 @@
 #!/bin/sh -ex
-version="${XBUILD?}"
 # write gradle.properties
-echo "version=${version?}" > gradle.properties
+echo "version=${XBUILD?}" > gradle.properties
 # gradle
 gradle bootJar
 # for pip install
-sed s/VERSION/${version?}/ setup.py.in > setup.py
+sed s/VERSION/0.9.${XBUILD_NUMBER?}/ setup.py.in > setup.py
 zip xbuild-jar.zip setup.py xbuild.jar
