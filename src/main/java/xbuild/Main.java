@@ -1,22 +1,42 @@
 package xbuild;
 
-import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
-import org.apache.commons.compress.archivers.tar.*;
-import org.eclipse.jgit.api.*;
-import org.eclipse.jgit.archive.*;
-import org.eclipse.jgit.lib.*;
-import org.eclipse.jgit.revwalk.*;
-import org.eclipse.jgit.storage.file.*;
-import org.springframework.boot.*;
-import org.springframework.boot.autoconfigure.*;
-import org.springframework.boot.info.*;
-import org.springframework.context.*;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import com.google.common.collect.*;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.archive.ArchiveFormats;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ProgressMonitor;
+import org.eclipse.jgit.lib.Ref;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.ApplicationContext;
 
 /**
  * xbuild
@@ -29,8 +49,6 @@ public class Main implements ApplicationRunner {
   }
 
   public static void main(String[] args) throws Exception {
-    // args = new String[]{"2add6c"};
-    // args = new String[]{"git@github.com:xbuild-jar/xbuild-jar.git"};
     SpringApplication.run(Main.class, args);
   }
 
@@ -241,14 +259,12 @@ public class Main implements ApplicationRunner {
   
         // commit?
         for (String arg : nonOptionArgs) {
-          if (Repository.isValidRefName(arg)) {
-            ObjectId objectId = git().getRepository().resolve(arg);
-            if (objectId != null) {
-              log("commit[1]", arg);
-              commit = git().getRepository().parseCommit(objectId);
-              log("commit[2]", commit.name());
-              nonOptionArgs.remove(arg);
-            }
+          ObjectId objectId = git().getRepository().resolve(arg);
+          if (objectId != null) {
+            log("commit[1]", arg);
+            commit = git().getRepository().parseCommit(objectId);
+            log("commit[2]", commit.name());
+            nonOptionArgs.remove(arg);
           }
         }
   
